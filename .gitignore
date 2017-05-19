@@ -1,0 +1,29 @@
+﻿# Ignore the uploaded folders
+/.vs
+/Debug
+/Output
+/Release
+/libiop/Debug
+/libiop/x64
+/libiop/logs
+
+# Ignore the uploaded files
+-p
+~*
+*~
+*.db
+*.swp
+*.exe
+*.out
+*.pdb
+*.pch
+*.ilk
+*.log
+*.err
+*.out
+*.obj
+*.idb
+*.iobj
+*.ipdb
+*.tlog
+*.opendb

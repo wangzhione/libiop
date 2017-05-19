@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="pthread">
+      <UniqueIdentifier>{824b7e57-63eb-4879-8893-1558a1500834}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="main">
+      <UniqueIdentifier>{a0f72986-ba07-4f83-beec-0305a7b0151d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pthread\include">
+      <UniqueIdentifier>{82ab6dc5-50e9-45c2-bea7-5d3768589782}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pthread\dll">
+      <UniqueIdentifier>{407c2765-9385-4e8f-bfc9-728a3dcc8d5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pthread\lib">
+      <UniqueIdentifier>{88092f95-0b4e-4cf5-8fa8-15c28071f4d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="iop">
+      <UniqueIdentifier>{949b5e19-f84e-48b8-b4b3-ffd5b3f77de5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="iop\include">
+      <UniqueIdentifier>{6b816b48-4ffd-44d9-90ed-ca6be553ce4f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pthread\include\pthread.h">
+      <Filter>pthread\include</Filter>
+    </ClInclude>
+    <ClInclude Include="pthread\include\sched.h">
+      <Filter>pthread\include</Filter>
+    </ClInclude>
+    <ClInclude Include="pthread\include\semaphore.h">
+      <Filter>pthread\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\chead.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop_util.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop_def.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\ibuf.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop_poll.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop_server.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop_poll$epoll.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+    <ClInclude Include="iop\include\iop_poll$select.h">
+      <Filter>iop\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="pthread\lib\pthreadVC2.lib">
+      <Filter>pthread\lib</Filter>
+    </Library>
+    <Library Include="pthread\lib\pthreadVCE2.lib">
+      <Filter>pthread\lib</Filter>
+    </Library>
+    <Library Include="pthread\lib\pthreadVSE2.lib">
+      <Filter>pthread\lib</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="pthread\dll\pthreadGC2.dll">
+      <Filter>pthread\dll</Filter>
+    </None>
+    <None Include="pthread\dll\pthreadGCE2.dll">
+      <Filter>pthread\dll</Filter>
+    </None>
+    <None Include="pthread\dll\pthreadVC2.dll">
+      <Filter>pthread\dll</Filter>
+    </None>
+    <None Include="pthread\dll\pthreadVCE2.dll">
+      <Filter>pthread\dll</Filter>
+    </None>
+    <None Include="pthread\dll\pthreadVSE2.dll">
+      <Filter>pthread\dll</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.c">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="iop\iop_util.c">
+      <Filter>iop</Filter>
+    </ClCompile>
+    <ClCompile Include="iop\ibuf.c">
+      <Filter>iop</Filter>
+    </ClCompile>
+    <ClCompile Include="iop\iop_server.c">
+      <Filter>iop</Filter>
+    </ClCompile>
+    <ClCompile Include="iop\iop.c">
+      <Filter>iop</Filter>
+    </ClCompile>
+    <ClCompile Include="iop\iop_poll.c">
+      <Filter>iop</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+</Project>
