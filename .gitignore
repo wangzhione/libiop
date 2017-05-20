@@ -12,6 +12,7 @@
 ~*
 *~
 *.db
+*.suo
 *.swp
 *.exe
 *.out
