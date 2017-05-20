@@ -25,6 +25,7 @@ RUN			= $(RHAD) -o $(TAR_PATH)/$@ $(foreach v, $^, $(TAR_PATH)/$(OBJ_DIR)/$(v)) 
 # $(notdir dir/*.c) 	-> *.c
 # $(basename *.c) 		-> *
 #
+
 define CALL_RUNO
 $(notdir $(basename $(1))).o : $(1) | $$(TAR_PATH)
 	$$(RUNO)

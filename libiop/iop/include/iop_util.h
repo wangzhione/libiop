@@ -45,10 +45,6 @@
 #define SOCKET_EINPROGRESS		EINPROGRESS
 
 #define IGNORE_SIGNAL(sig)			signal(sig, SIG_IGN)
-//
-// IGNORE_SIGPIPE - 管道破裂,忽略SIGPIPE信号
-//
-#define IGNORE_SIGPIPE()			IGNORE_SIGNAL(SIGPIPE)
 
 #define SET_RLIMIT_NOFILE(num) \
 	do {\
@@ -70,7 +66,6 @@ typedef int socket_t;
 		Sleep(m)
 
 #define IGNORE_SIGNAL(sig)
-#define IGNORE_SIGPIPE()			IGNORE_SIGNAL(SIGPIPE)
 #define SET_RLIMIT_NOFILE(num)	
 
 #define SOCK_STARTUP() \
@@ -95,6 +90,11 @@ typedef SOCKET socket_t;
 #else
 #	error "error : Currently only supports the Visual Studio and GCC!"
 #endif
+
+//
+// IGNORE_SIGPIPE - 管道破裂,忽略SIGPIPE信号
+//
+#define IGNORE_SIGPIPE()			IGNORE_SIGNAL(SIGPIPE)
 
 // Windows WSBUF or Linux struct iovec 兼容的一个vec 结构
 typedef struct vecio {
