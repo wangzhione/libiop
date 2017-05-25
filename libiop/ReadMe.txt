@@ -29,6 +29,7 @@ window 配置步骤
 	3. C/C++ 高级 -> 编译为 -> 编译为 C 代码 (/TC)
 
 	4. 链接器 -> 附加依赖项
+		ws2_32.lib
 		pthreadVC2.lib
 		pthreadVCE2.lib
 		pthreadVSE2.lib
