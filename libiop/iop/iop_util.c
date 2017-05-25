@@ -44,7 +44,7 @@ socket_bind(socket_t s, const char * ip, uint16_t port) {
 	return bind(s, (const struct sockaddr *)&addr, sizeof addr);
 }
 
-int 
+int
 socket_close(socket_t s) {
 	int r;
 #ifdef _MSC_VER
@@ -143,29 +143,29 @@ socket_recv(socket_t s, void * buf, int len) {
 	return r;
 }
 
-int 
+int
 socket_sendn(socket_t s, const void * buf, int len) {
 	int r, nlen = len;
 	while (nlen > 0) {
 		r = socket_send(s, buf, nlen);
 		if (r == 0) break;
 		if (r == SOCKET_ERROR) {
-			RETURN(SOCKET_ERROR, "socket_send SOCKET_ERROR s = %d, len = %d, nlen = %d.", s, len, nlen);
+			RETURN(SOCKET_ERROR, "socket_send SOCKET_ERROR s = %lld, len = %d, nlen = %d.", (int64_t)s, len, nlen);
 		}
 		nlen -= r;
-		buf =(const char *)buf + r;
+		buf = (const char *)buf + r;
 	}
 	return len - nlen;
 }
 
-int 
+int
 socket_recvn(socket_t s, void * buf, int len) {
 	int r, nlen = len;
 	while (nlen > 0) {
 		r = socket_recv(s, buf, nlen);
 		if (r == 0) break;
-		if(r == SOCKET_ERROR) {
-			RETURN(SOCKET_ERROR, "socket_recv SOCKET_ERROR s = %d, len = %d, nlen = %d.", s, len, nlen);
+		if (r == SOCKET_ERROR) {
+			RETURN(SOCKET_ERROR, "socket_recv SOCKET_ERROR s = %lld, len = %d, nlen = %d.", (int64_t)s, len, nlen);
 		}
 		nlen -= r;
 		buf = (char *)buf + r;
@@ -204,7 +204,7 @@ socket_sendv(socket_t s, const vecio_t * vec, int cnt) {
 	// 复制内容
 	for (r = 0; r < cnt; ++r) {
 #ifdef _MSC_VER
-		vs[r].len = (size_t)vec[r].len;
+		vs[r].len = (ULONG)vec[r].len;
 		vs[r].buf = vec[r].buf;
 #else
 		vs[r].iov_len = vec[r].len;
@@ -293,12 +293,12 @@ socket_recvfrom(socket_t s, void * buf, int len, int flags, sockaddr_t * in, soc
 // socket_accept		- accept 链接函数
 //
 
-socket_t 
+socket_t
 socket_tcp(const char * host, uint16_t port) {
 	int r;
 	socket_t s = socket_stream();
 	if (INVALID_SOCKET == s) {
-		RETURN(INVALID_SOCKET, "socket_stream socket error s = %d.", s);
+		RETURN(INVALID_SOCKET, "socket_stream socket error s = %lld.", (int64_t)s);
 	}
 
 	// 开启地址复用和端口绑定
@@ -306,25 +306,25 @@ socket_tcp(const char * host, uint16_t port) {
 	r |= socket_bind(s, host, port);
 	if (r != Success_Base) {
 		socket_close(s);
-		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %d.", s);
+		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %lld.", (int64_t)s);
 	}
 
 	// 开启监听
 	r = listen(s, SOMAXCONN);
 	if (r != Success_Base) {
 		socket_close(s);
-		RETURN(INVALID_SOCKET, "socket listen SOMAXCONN is error s = %d.", s);
+		RETURN(INVALID_SOCKET, "socket listen SOMAXCONN is error s = %lld.", (int64_t)s);
 	}
 
 	return s;
 }
 
-socket_t 
+socket_t
 socket_udp(const char * host, uint16_t port) {
 	int r;
 	socket_t s = socket_dgram();
 	if (INVALID_SOCKET == s) {
-		RETURN(INVALID_SOCKET, "socket_dgram socket error s = %d.", s);
+		RETURN(INVALID_SOCKET, "socket_dgram socket error s = %lld.", (int64_t)s);
 	}
 
 	// 开启地址复用和端口绑定
@@ -332,24 +332,24 @@ socket_udp(const char * host, uint16_t port) {
 	r |= socket_bind(s, host, port);
 	if (r != Success_Base) {
 		socket_close(s);
-		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %d.", s);
+		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %lld.", (int64_t)s);
 	}
 	return s;
 }
 
-inline int 
+inline int
 socket_connect(socket_t s, const sockaddr_t * addr) {
 	return connect(s, (const struct sockaddr *)addr, sizeof(*addr));
 }
 
-inline int 
+inline int
 socket_connects(socket_t s, const char * ip, uint16_t port) {
 	sockaddr_t addr;
 	SOCKADDR_IN(addr, ip, port);
 	return socket_connect(s, &addr);
 }
 
-int 
+int
 socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 	int n, r;
 	struct timeval to;
@@ -357,11 +357,11 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 
 	// 还是阻塞的connect
 	if (ms < 0) return socket_connect(s, addr);
-	
+
 	// 非阻塞登录, 先设置非阻塞模式
 	r = socket_set_nonblock(s);
 	if (r < Success_Base) {
-		RETURN(r, "socket_set_nonblock error s = %d.", s);
+		RETURN(r, "socket_set_nonblock error s = %lld.", (int64_t)s);
 	}
 
 	// 尝试连接一下, 非阻塞connect 返回 -1 并且 errno == EINPROGRESS 表示正在建立链接
@@ -374,7 +374,7 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 #else
 	if (socket_errno != SOCKET_EINPROGRESS) {
 #endif
-		CERR("socket_connect error errno = %d, s = %d.", socket_errno, s);
+		CERR("socket_connect error errno = %d, s = %lld.", socket_errno, (int64_t)s);
 		goto __return;
 	}
 
@@ -387,7 +387,7 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 	FD_ZERO(&wset);
 	FD_SET(s, &wset);
 	MAKE_TIMEVAL(to, ms);
-	n = select(s + 1, &rset, &wset, NULL, &to);
+	n = select((int)s + 1, &rset, &wset, NULL, &to);
 	// 超时直接滚
 	if (n <= 0) goto __return;
 
@@ -408,9 +408,9 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 __return:
 	socket_set_block(s);
 	return r;
-}
+	}
 
-socket_t 
+socket_t
 socket_connectos(const char * host, uint16_t port, int ms) {
 	int r;
 	sockaddr_t addr;
@@ -431,7 +431,7 @@ socket_connectos(const char * host, uint16_t port, int ms) {
 	return s;
 }
 
-inline socket_t 
+inline socket_t
 socket_accept(socket_t s, sockaddr_t * addr, socklen_t * len) {
 	return accept(s, (struct sockaddr *)addr, len);
 }

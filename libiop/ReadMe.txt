@@ -28,6 +28,11 @@ window 配置步骤
 		
 	3. C/C++ 高级 -> 编译为 -> 编译为 C 代码 (/TC)
 
+	4. 链接器 -> 附加依赖项
+		pthreadVC2.lib
+		pthreadVCE2.lib
+		pthreadVSE2.lib
+
 linux 配置步骤
 	1. 参照 Makefile 文件
 	

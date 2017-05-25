@@ -22,13 +22,13 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 		// 服务器关闭, 直接返回关闭操作
 		if (n == Success_Close)
 			return Success_Close;
-		
-		for(;;) {
+
+		for (;;) {
 			// 读取链接关闭
 			n = sarg->fparser(iop->rbuf->data, iop->rbuf->size);
 			if (n < Success_Base) {
 				r = sarg->ferror(base, id, EV_CREATE, arg);
-				if(r < Success_Base)
+				if (r < Success_Base)
 					return r;
 				break;
 			}
@@ -74,7 +74,7 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 	// 超时时间处理
 	if (events & EV_TIMEOUT) {
 		r = sarg->ferror(base, id, EV_TIMEOUT, arg);
-		if (r < Success_Base) 
+		if (r < Success_Base)
 			return r;
 	}
 
@@ -94,7 +94,7 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 		iop = base->iops + id;
 		s = socket_accept(iop->s, NULL, NULL);
 		if (INVALID_SOCKET == s) {
-			RETURN(Error_Fd, "socket_accept is error s = %u.", iop->s);
+			RETURN(Error_Fd, "socket_accept is error s = %lld.", (int64_t)iop->s);
 		}
 
 		r = iop_add(base, s, EV_READ, sarg->timeout, _iop_tcp_fdispatch, NULL);
@@ -121,7 +121,7 @@ static ilist_t _ilist_add(ilist_t list, void * arg) {
 	node->data = arg;
 	node->next = NULL;
 
-	if (!list) 
+	if (!list)
 		return node;
 	list->next = node;
 	return list;
@@ -163,7 +163,7 @@ int iop_add_ioptcp(iopbase_t base,
 	// 开始复制内容
 	strncpy(sarg->host, host, _INT_HOST - 1);
 	sarg->host[_INT_HOST - 1] = '\0';
-	
+
 	sarg->port = port;
 	sarg->timeout = timeout;
 	sarg->fconnect = fconnect;
