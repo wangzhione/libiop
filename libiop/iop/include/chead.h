@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 //
 // flag_e - 全局操作基本行为返回的枚举, 用于判断返回值状态的状态码

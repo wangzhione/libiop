@@ -94,7 +94,7 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 		iop = base->iops + id;
 		s = socket_accept(iop->s, NULL, NULL);
 		if (INVALID_SOCKET == s) {
-			RETURN(Error_Fd, "socket_accept is error s = %lld.", (int64_t)iop->s);
+			RETURN(Error_Fd, "socket_accept is error s = %"PRIu64".", (uint64_t)iop->s);
 		}
 
 		r = iop_add(base, s, EV_READ, sarg->timeout, _iop_tcp_fdispatch, NULL);

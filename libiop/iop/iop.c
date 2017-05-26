@@ -305,7 +305,7 @@ iop_mod(iopbase_t base, uint32_t id, uint32_t events) {
 		RETURN(Error_Base, "iop type is error = [%u, %u].", iop->type, id);
 	}
 	if (iop->s == INVALID_SOCKET) {
-		RETURN(Error_Base, "iop socket is error = [%lld, %u].", (int64_t)iop->s, id);
+		RETURN(Error_Base, "iop socket is error = [%"PRIu64", %u].", (int64_t)iop->s, id);
 	}
 
 	return base->op.fmod(base, iop->id, iop->s, events);

@@ -150,7 +150,7 @@ socket_sendn(socket_t s, const void * buf, int len) {
 		r = socket_send(s, buf, nlen);
 		if (r == 0) break;
 		if (r == SOCKET_ERROR) {
-			RETURN(SOCKET_ERROR, "socket_send SOCKET_ERROR s = %lld, len = %d, nlen = %d.", (int64_t)s, len, nlen);
+			RETURN(SOCKET_ERROR, "socket_send SOCKET_ERROR s = %"PRIu64", len = %d, nlen = %d.", (uint64_t)s, len, nlen);
 		}
 		nlen -= r;
 		buf = (const char *)buf + r;
@@ -165,7 +165,7 @@ socket_recvn(socket_t s, void * buf, int len) {
 		r = socket_recv(s, buf, nlen);
 		if (r == 0) break;
 		if (r == SOCKET_ERROR) {
-			RETURN(SOCKET_ERROR, "socket_recv SOCKET_ERROR s = %lld, len = %d, nlen = %d.", (int64_t)s, len, nlen);
+			RETURN(SOCKET_ERROR, "socket_recv SOCKET_ERROR s = %"PRIu64", len = %d, nlen = %d.", (uint64_t)s, len, nlen);
 		}
 		nlen -= r;
 		buf = (char *)buf + r;
@@ -298,7 +298,7 @@ socket_tcp(const char * host, uint16_t port) {
 	int r;
 	socket_t s = socket_stream();
 	if (INVALID_SOCKET == s) {
-		RETURN(INVALID_SOCKET, "socket_stream socket error s = %lld.", (int64_t)s);
+		RETURN(INVALID_SOCKET, "socket_stream socket error s = %"PRIu64".", (uint64_t)s);
 	}
 
 	// 开启地址复用和端口绑定
@@ -306,14 +306,14 @@ socket_tcp(const char * host, uint16_t port) {
 	r |= socket_bind(s, host, port);
 	if (r != Success_Base) {
 		socket_close(s);
-		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %lld.", (int64_t)s);
+		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %"PRIu64".", (uint64_t)s);
 	}
 
 	// 开启监听
 	r = listen(s, SOMAXCONN);
 	if (r != Success_Base) {
 		socket_close(s);
-		RETURN(INVALID_SOCKET, "socket listen SOMAXCONN is error s = %lld.", (int64_t)s);
+		RETURN(INVALID_SOCKET, "socket listen SOMAXCONN is error s = %"PRIu64".", (uint64_t)s);
 	}
 
 	return s;
@@ -324,7 +324,7 @@ socket_udp(const char * host, uint16_t port) {
 	int r;
 	socket_t s = socket_dgram();
 	if (INVALID_SOCKET == s) {
-		RETURN(INVALID_SOCKET, "socket_dgram socket error s = %lld.", (int64_t)s);
+		RETURN(INVALID_SOCKET, "socket_dgram socket error s = %"PRIu64".", (uint64_t)s);
 	}
 
 	// 开启地址复用和端口绑定
@@ -332,7 +332,7 @@ socket_udp(const char * host, uint16_t port) {
 	r |= socket_bind(s, host, port);
 	if (r != Success_Base) {
 		socket_close(s);
-		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %lld.", (int64_t)s);
+		RETURN(INVALID_SOCKET, "socket reuseaddr or bind is error s = %"PRIu64".", (uint64_t)s);
 	}
 	return s;
 }
@@ -361,7 +361,7 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 	// 非阻塞登录, 先设置非阻塞模式
 	r = socket_set_nonblock(s);
 	if (r < Success_Base) {
-		RETURN(r, "socket_set_nonblock error s = %lld.", (int64_t)s);
+		RETURN(r, "socket_set_nonblock error s = %"PRIu64".", (uint64_t)s);
 	}
 
 	// 尝试连接一下, 非阻塞connect 返回 -1 并且 errno == EINPROGRESS 表示正在建立链接
@@ -374,7 +374,7 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 #else
 	if (socket_errno != SOCKET_EINPROGRESS) {
 #endif
-		CERR("socket_connect error errno = %d, s = %lld.", socket_errno, (int64_t)s);
+		CERR("socket_connect error errno = %d, s = %"PRIu64".", socket_errno, (uint64_t)s);
 		goto __return;
 	}
 
