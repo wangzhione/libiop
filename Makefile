@@ -5,11 +5,12 @@ SRC_PATH		?= ./libiop
 IOP_DIR			?= iop
 TAR_PATH		?= ./Output
 OBJ_DIR			?= obj
+HLP_DIR			?= helper
 
 #
 # 指定一些目录, 还有编译参数支持
 #
-DIR			= -I$(SRC_PATH)/$(IOP_DIR)/include
+DIR			= -I$(SRC_PATH)/$(IOP_DIR)/include -I$(SRC_PATH)/$(HLP_DIR)/include
 DEF			= -D_HAVE_EPOLL
 
 CC			= gcc
@@ -41,7 +42,7 @@ all:main.exe
 #
 # *.o 映射到 $(TAR_PATH)/$(BUILD_DIR)/*.o
 #
-main.exe:main.o ibuf.o iop_util.o iop_poll.o iop.o iop_server.o
+main.exe:main.o tstr.o vlist.o iop_util.o iop_poll.o iop.o iop_server.o
 	$(RUN)
 
 main.o:$(SRC_PATH)/main.c | $(TAR_PATH)
@@ -56,6 +57,7 @@ main.o:$(SRC_PATH)/main.c | $(TAR_PATH)
 #
 SRC_CS = $(wildcard\
 		 $(SRC_PATH)/$(IOP_DIR)/*.c\
+		 $(SRC_PATH)/$(HLP_DIR)/*.c\
 )
 $(foreach v, $(SRC_CS), $(eval $(call CALL_RUNO, $(v))))
 

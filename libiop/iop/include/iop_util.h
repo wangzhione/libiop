@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <signal.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
 #include <sys/uio.h>

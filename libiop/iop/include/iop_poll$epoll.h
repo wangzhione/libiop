@@ -1,5 +1,6 @@
 ﻿#if defined(__GNUC__) && defined(_HAVE_EPOLL)
 
+#include <time.h>
 #include <iop_poll.h>
 #include <sys/epoll.h>
 
