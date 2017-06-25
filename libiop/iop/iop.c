@@ -6,22 +6,6 @@ static inline int _iop_default_event(iopbase_t base, uint32_t id, uint32_t event
 	return Success_Base;
 }
 
-static iop_t _iop_get_freehead(iopbase_t base) {
-	iop_t iop;
-	if (base->freehead == INVALID_SOCKET)
-		return NULL;
-
-	// 存在释放结点, 找出来处理
-	iop = base->iops + base->freehead;
-	base->freehead = iop->next;
-	if (base->freehead == INVALID_SOCKET)
-		base->freetail = INVALID_SOCKET;
-	else
-		base->iops[base->freehead].prev = INVALID_SOCKET;
-
-	return iop;
-}
-
 // 构建对象
 static iopbase_t _iopbase_new(uint32_t maxio) {
 	uint32_t i = 0, prev = INVALID_SOCKET;
@@ -85,17 +69,17 @@ iop_create(void) {
 void 
 iop_delete(iopbase_t base) {
 	uint32_t i;
-	ibuf_t ibuf;
 	if (!base) return;
+
+	base->flag = true;
 	if (base->iops) {
 		while (base->iohead != INVALID_SOCKET)
 			iop_del(base, base->iohead);
 
 		for (i = 0; i < base->maxio; ++i) {
-			if (!!(ibuf = base->iops[i].sbuf))
-				ibuf_delete(ibuf);
-			if (!!(ibuf = base->iops[i].rbuf))
-				ibuf_delete(ibuf);
+			iop_t iop = base->iops + i;
+			TSTR_DELETE(iop->sbuf);
+			TSTR_DELETE(iop->rbuf);
 		}
 
 		base->maxio = 0;
@@ -107,12 +91,7 @@ iop_delete(iopbase_t base) {
 		base->op.ffree(base);
 
 	// 删除链表
-	while (base->tplist) {
-		ilist_t next = base->tplist->next;
-		free(base->tplist->data);
-		free(base->tplist);
-		base->tplist = next;
-	}
+	vlist_delete(base->tplist);
 
 	free(base);
 }
@@ -124,8 +103,8 @@ iop_delete(iopbase_t base) {
 //
 int 
 iop_dispatch(iopbase_t base) {
-	int curid, nextid, r;
 	iop_t iop;
+	int curid, nextid, r;
 
 	// 调度一次
 	r = base->op.fdispatch(base, base->dispatchval);
@@ -167,30 +146,49 @@ iop_run(iopbase_t base) {
 	iop_delete(base);
 }
 
-static void * _run_thread(void * arg) {
+static inline void * _run_thread(void * arg) {
 	iop_run(arg);
 	return arg;
 }
 
 //
 // iop_run_pthread - 开启一个线程来跑这个轮询事件
-// base		: io调度对象
-// th		: 返回调度线程的id
-// return	: >=0 表示成功, <0 表示失败
+// base		: iop 操作类型
+// tid		: 返回的线程id指针
+// return	: >=Success_Base 表示成功, 否则失败
 //
 int 
-iop_run_pthread(iopbase_t base, pthread_t * th) {
+iop_run_pthread(iopbase_t base, pthread_t * tid) {
 	int r;
 	pthread_attr_t attr;
+
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, _INT_STACK);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	// 线程启动起来
-	r = pthread_create(th, &attr, _run_thread, base);
+	r = pthread_create(tid, &attr, _run_thread, base);
+	if (r < Success_Base) {
+		iop_delete(base);
+		RETURN(r, "pthread_create _run_thread is error r = %d!", r);
+	}
 
 	pthread_attr_destroy(&attr);
 	return r;
+}
+
+//
+// iop_end_pthread - 结束一个线程的iop调度
+// base		: iop 操作类型
+// tid		: 线程操作的类型
+// return	: void
+//
+void 
+iop_end_pthread(iopbase_t base, pthread_t * tid) {
+	if (!base || !tid)
+		RETURN(NIL, "check param is erro base = %p, tid = %p.", base, tid);
+
+	base->flag = true;
+	pthread_join(*tid, NULL);
 }
 
 //
@@ -201,6 +199,22 @@ iop_run_pthread(iopbase_t base, pthread_t * th) {
 inline void 
 iop_stop(iopbase_t base) {
 	base->flag = true;
+}
+
+static iop_t _iop_get_freehead(iopbase_t base) {
+	iop_t iop;
+	if (base->freehead == INVALID_SOCKET)
+		return NULL;
+
+	// 存在释放结点, 找出来处理
+	iop = base->iops + base->freehead;
+	base->freehead = iop->next;
+	if (base->freehead == INVALID_SOCKET)
+		base->freetail = INVALID_SOCKET;
+	else
+		base->iops[base->freehead].prev = INVALID_SOCKET;
+
+	return iop;
 }
 
 //
@@ -317,14 +331,9 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 	int r = Success_Base;
 	const char * csts = data;
 	iop_t iop = base->iops + id;
-	if (NULL == iop->sbuf) {
-		iop->sbuf = ibuf_create(len);
-		if (NULL == iop->sbuf) {
-			RETURN(Error_Alloc, "ibuf_create iop->sbuf alloc error len = %u.", len);
-		}
-	}
+	tstr_t buf = iop->sbuf;
 
-	if (iop->sbuf->size <= 0) {
+	if (buf->len <= 0) {
 		r = socket_send(iop->s, data, len);
 		if (r >= 0 && (uint32_t)r >= len)
 			return Success_Base;
@@ -338,15 +347,12 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 	}
 
 	// 剩余的发送部分, 下次再发
-	if (iop->sbuf->capacity > _INT_MAXBUF) {
-		RETURN(Error_Alloc, "iop->sbuf->capacity error too length = %u.", iop->sbuf->capacity);
+	if (buf->cap > _INT_MAXBUF) {
+		RETURN(Error_Alloc, "iop->sbuf->capacity error too length = %zd.", buf->cap);
 	}
 
 	// 开始填充内存
-	r = ibuf_pushback(iop->sbuf, csts, len - r);
-	if (r < Success_Base) {
-		RETURN(Error_Alloc, "ibuf_pushback error div = %d.", len - r);
-	}
+	tstr_appendn(buf, csts, len - r);
 
 	if (iop->events & EV_WRITE)
 		return Success_Base;
@@ -359,25 +365,15 @@ int
 iop_recv(iopbase_t base, uint32_t id) {
 	int r;
 	iop_t iop = base->iops + id;
-	ibuf_t buf = iop->rbuf;
-	if (NULL == buf) {
-		buf = ibuf_create(_INT_RECV);
-		if (NULL == buf) {
-			RETURN(Error_Alloc, "ibuf_create iop->rbuf alloc error len = %u.", _INT_RECV);
-		}
-		iop->rbuf = buf;
+	tstr_t buf = iop->rbuf;
+
+	if (buf->cap > _INT_MAXBUF) {
+		RETURN(Error_Alloc, "iop->rbuf->capacity error too length = %zd.", buf->cap);
 	}
-	else {
-		if (buf->capacity > _INT_MAXBUF || buf->capacity <= buf->size) {
-			RETURN(Error_Alloc, "iop->rbuf->capacity error too length = %u.", iop->sbuf->capacity);
-		}
-		if (Success_Base > ibuf_expand(buf, _INT_RECV)) {
-			RETURN(Error_Alloc, "ibuf_expand error _INT_RECV = %d!!", _INT_RECV);
-		}
-	}
+	tstr_expand(buf, _INT_RECV);
 
 	// 开始接收数据
-	r = socket_recv(iop->s, (char *)buf->data + buf->size, buf->capacity - buf->size);
+	r = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);
 	if (r < 0) {
 		if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
 			RETURN(Error_Base, "socket_read socker_errno = %u, r = %d.", socket_errno, r);
@@ -389,6 +385,6 @@ iop_recv(iopbase_t base, uint32_t id) {
 	if (r == 0)
 		return Success_Close;
 
-	buf->size += r;
+	buf->len += r;
 	return Success_Base;
 }

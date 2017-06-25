@@ -1,7 +1,7 @@
 ﻿#ifndef _H_LIBIOP_IOP_UTIL
 #define _H_LIBIOP_IOP_UTIL
 
-#include <chead.h>
+#include <struct.h>
 
 //
 //	- 跨平台的丑陋从这里开始, 封装一些共用实现
@@ -12,24 +12,13 @@
 
 #include <fcntl.h>
 #include <netdb.h>
-#include <unistd.h>
 #include <signal.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
 #include <sys/uio.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/resource.h>
-
-//
-// sh_sleep - 睡眠函数宏, 时间颗粒度是毫秒.
-//	m		: 待睡眠的毫秒数
-//	return	: void
-//
-#define sh_sleep(m) \
-		usleep(m * 1000)
 
 //
 // This is used instead of -1, since the. by WinSock
@@ -52,30 +41,14 @@
 		setrlimit(RLIMIT_NOFILE, &$r);\
 	} while(0)
 
-#define SOCK_STARTUP() 
-#define SOCK_CLEANUP() 
-
 typedef int socket_t;
 
 #elif _MSC_VER
 
 #include <WinSock2.h>
-#include <Windows.h>	
-
-#define sh_sleep(m) \
-		Sleep(m)
 
 #define IGNORE_SIGNAL(sig)
 #define SET_RLIMIT_NOFILE(num)	
-
-#define SOCK_STARTUP() \
-	do { \
-		WSADATA $wsadata;\
-		WSAStartup(MAKEWORD(2, 2), &$wsadata);\
-	} while(0)
-
-#define SOCK_CLEANUP() \
-		WSACleanup()
 
 #define socket_errno			WSAGetLastError()
 #define SOCKET_EINTR			WSAEINTR
@@ -118,26 +91,6 @@ typedef struct sockaddr_in sockaddr_t;
 	} while(0)
 
 //
-// SOCKADDR_IN - 构建sockaddr_in 地址信息
-// addr		: sockaddr_in 栈上变量
-// ip		: ip地址或http地址
-// port		: 端口
-//
-#define SOCKADDR_IN(addr, ip, port) \
-	do { \
-		memset(&(addr), 0, sizeof(addr));\
-		(addr).sin_family = AF_INET;\
-		(addr).sin_port = htons(port);\
-		(addr).sin_addr.s_addr = inet_addr(ip);\
-		if((addr).sin_addr.s_addr == INADDR_NONE) {\
-			struct hostent * $host = gethostbyname(ip);\
-			if(NULL == $host)\
-				CERR_EXIT("gethostbyname ip = %s is error!", ip);\
-			memcpy(&(addr).sin_addr, $host->h_addr_list[0], $host->h_length);\
-		}\
-	} while(0)
-
-//
 // MAKE_TIMEVAL - 毫秒数转成 timeval 变量
 // tv		: struct timeval 变量
 // msec		: 毫秒数
@@ -153,6 +106,13 @@ typedef struct sockaddr_in sockaddr_t;
 			(tv).tv_usec = 0;\
 		}\
 	} while(0)
+
+//
+// socket_start - 启动socket库的初始化方法
+// socket_addr - 通过ip, port 得到 ipv4 地址信息
+// 
+extern void socket_start(void);
+extern int socket_addr(const char * ip, uint16_t port, sockaddr_t * addr);
 
 //
 // socket_stream	- 创建TCP socket

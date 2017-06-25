@@ -22,6 +22,12 @@
     <Filter Include="iop\include">
       <UniqueIdentifier>{6b816b48-4ffd-44d9-90ed-ca6be553ce4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="helper">
+      <UniqueIdentifier>{97d9a746-e5ac-4599-b615-59b1de4ec6b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="helper\inlcude">
+      <UniqueIdentifier>{3642c437-0e59-4216-8f24-066135acf813}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pthread\include\pthread.h">
@@ -33,16 +39,10 @@
     <ClInclude Include="pthread\include\semaphore.h">
       <Filter>pthread\include</Filter>
     </ClInclude>
-    <ClInclude Include="iop\include\chead.h">
-      <Filter>iop\include</Filter>
-    </ClInclude>
     <ClInclude Include="iop\include\iop_util.h">
       <Filter>iop\include</Filter>
     </ClInclude>
     <ClInclude Include="iop\include\iop_def.h">
-      <Filter>iop\include</Filter>
-    </ClInclude>
-    <ClInclude Include="iop\include\ibuf.h">
       <Filter>iop\include</Filter>
     </ClInclude>
     <ClInclude Include="iop\include\iop_poll.h">
@@ -60,43 +60,21 @@
     <ClInclude Include="iop\include\iop_poll$select.h">
       <Filter>iop\include</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="pthread\lib\pthreadVC2.lib">
-      <Filter>pthread\lib</Filter>
-    </Library>
-    <Library Include="pthread\lib\pthreadVCE2.lib">
-      <Filter>pthread\lib</Filter>
-    </Library>
-    <Library Include="pthread\lib\pthreadVSE2.lib">
-      <Filter>pthread\lib</Filter>
-    </Library>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="pthread\dll\pthreadGC2.dll">
-      <Filter>pthread\dll</Filter>
-    </None>
-    <None Include="pthread\dll\pthreadGCE2.dll">
-      <Filter>pthread\dll</Filter>
-    </None>
-    <None Include="pthread\dll\pthreadVC2.dll">
-      <Filter>pthread\dll</Filter>
-    </None>
-    <None Include="pthread\dll\pthreadVCE2.dll">
-      <Filter>pthread\dll</Filter>
-    </None>
-    <None Include="pthread\dll\pthreadVSE2.dll">
-      <Filter>pthread\dll</Filter>
-    </None>
+    <ClInclude Include="helper\include\struct.h">
+      <Filter>helper\inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="helper\include\tstr.h">
+      <Filter>helper\inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="helper\include\vlist.h">
+      <Filter>helper\inlcude</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
       <Filter>main</Filter>
     </ClCompile>
     <ClCompile Include="iop\iop_util.c">
-      <Filter>iop</Filter>
-    </ClCompile>
-    <ClCompile Include="iop\ibuf.c">
       <Filter>iop</Filter>
     </ClCompile>
     <ClCompile Include="iop\iop_server.c">
@@ -108,8 +86,24 @@
     <ClCompile Include="iop\iop_poll.c">
       <Filter>iop</Filter>
     </ClCompile>
+    <ClCompile Include="helper\tstr.c">
+      <Filter>helper</Filter>
+    </ClCompile>
+    <ClCompile Include="helper\vlist.c">
+      <Filter>helper</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="pthread\dll\pthread_dll.dll">
+      <Filter>pthread\dll</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="pthread\lib\pthread_dll.lib">
+      <Filter>pthread\lib</Filter>
+    </Library>
   </ItemGroup>
 </Project>

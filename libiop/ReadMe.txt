@@ -30,9 +30,13 @@ window 配置步骤
 
 	4. 链接器 -> 附加依赖项
 		ws2_32.lib
-		pthreadVC2.lib
-		pthreadVCE2.lib
-		pthreadVSE2.lib
+		pthread_dll.lib
+
+	5. 生成事件 -> 后期生成事件 -> 命令行
+
+	echo update dll begin
+	xcopy /D /S /E /Y $(ProjectDir)pthread\dll $(TargetDir)
+	echo update dll e n d
 
 linux 配置步骤
 	1. 参照 Makefile 文件

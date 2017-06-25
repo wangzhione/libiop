@@ -2,7 +2,8 @@
 #define _H_LIBIOP_IOP_DEF
 
 #include <iop_util.h>
-#include <ibuf.h>
+#include <vlist.h>
+#include <tstr.h>
 
 //
 // EV_XXX 是特定消息处理动作的标识
@@ -25,13 +26,13 @@
 //
 // _INT_XXX 系统运行中用到的参数
 //
-#define _INT_DISPATCH	(500)		// 事件调度的时间间隔
-#define _INT_MAXBUF		(1 << 26)	// socket data buf 最大64M	
+#define _INT_DISPATCH	(500)		// 事件调度的时间间隔 毫秒
+#define _INT_MAXBUF		(1 << 25)	// socket data buf 最大32M	
 #define _INT_POLL		(1 << 13)	// events limit
 #define _INT_HOST		(64)		// 主机字符保存
-#define _INT_KEEPALIVE	(60)		// 心跳包检查
+#define _INT_KEEPALIVE	(60)		// 心跳包检查 秒
 #define _INT_STACK		(1 << 23)	// 8M大小
-#define _INT_RECV		(1 << 13)	// 8k 接收缓冲区
+#define _INT_RECV		(1 << 12)	// 4k 接收缓冲区
 
 typedef struct iop * iop_t;
 typedef struct iopop * iopop_t;
@@ -83,7 +84,7 @@ typedef void (* iop_f)(iopbase_t base, uint32_t id, void * arg);
 //
 struct iop {
 	uint32_t id;			// 对应的id
-	socket_t s;				// 对映的socket
+	socket_t s;				// 对应的socket
 	uint8_t type;			// 对象类型 IOP_XXX 0:free, 1:io, 2:timer
 	int prev;				// 上一个对象
 	int next;				// 下一个对象
@@ -93,8 +94,8 @@ struct iop {
 	void * arg;				// 用户指定参数, 由用户负责释放资源
 	void * sarg;			// 系统指定参数, 由系统自动释放资源
 
-	ibuf_t sbuf;			// 发送缓冲区
-	ibuf_t rbuf;			// 接收缓冲区
+	struct tstr sbuf[1];	// 发送缓冲区, 希望保存在栈上
+	struct tstr rbuf[1];	// 接收缓冲区
 	time_t lastt;			// 最后一次调度时间
 };
 
@@ -108,8 +109,8 @@ struct iopop {
 };
 
 typedef struct ilist {
-	void * data;
 	struct ilist * next;
+	void * data;
 } * ilist_t;
 
 struct iopbase {
@@ -119,7 +120,7 @@ struct iopbase {
 	uint32_t freehead;		// 可用iop列表头
 	uint32_t freetail;		// 可用iop列表尾,最后一个
 	uint32_t iohead;		// 已用io类型的iop列表
-	volatile bool flag;		// 异步退出表示
+	volatile bool flag;		// 异步退出表示 true表示退出
 
 	int dispatchval;		// 调度的事件间隔
 	struct iopop op;		// 事件模型的内部实现
@@ -129,7 +130,7 @@ struct iopbase {
 	time_t lastt;			// 上次调度时间
 	time_t lastkeepalivet;	// 最后一次心跳的时间
 
-	ilist_t tplist;			// use for advance tcp server model.
+	vlist_t tplist;			// use for advance tcp server model.
 };
 
 //

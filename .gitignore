@@ -1,11 +1,13 @@
 ﻿# Ignore the uploaded folders
 /.vs
+/logs
 /Debug
 /Output
 /Release
-/libiop/Debug
-/libiop/x64
-/libiop/logs
+/*/x64
+/*/logs
+/*/Debug
+/*/Release
 
 # Ignore the uploaded files
 -p
@@ -14,6 +16,7 @@
 *.db
 *.suo
 *.swp
+*.swo
 *.exe
 *.out
 *.pdb
@@ -24,6 +27,8 @@
 *.out
 *.obj
 *.idb
+*.TMP
+.*.swo
 *.iobj
 *.ipdb
 *.tlog

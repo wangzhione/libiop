@@ -15,8 +15,8 @@ void test_echo_client(void);
 //
 int main(int argc, char * argv[]) {
 
-	// 装载socket 库
-	SOCK_STARTUP();
+	// 启动 * 装载 socket 库
+	socket_start();
 
 	// 客户端和服务器雌雄同体
 	if (argc > 1 && !strcmp("client", argv[1])) {
@@ -26,9 +26,6 @@ int main(int argc, char * argv[]) {
 		// 测试基础的服务器启动
 		test_echo_server();
 	}
-
-	// 卸载socket 库
-	SOCK_CLEANUP();
 
 	return EXIT_SUCCESS;
 }

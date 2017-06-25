@@ -25,7 +25,7 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 
 		for (;;) {
 			// 读取链接关闭
-			n = sarg->fparser(iop->rbuf->data, iop->rbuf->size);
+			n = sarg->fparser(iop->rbuf->str, iop->rbuf->len);
 			if (n < Success_Base) {
 				r = sarg->ferror(base, id, EV_CREATE, arg);
 				if (r < Success_Base)
@@ -35,13 +35,13 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 			if (n == Success_Base)
 				break;
 
-			r = sarg->fprocessor(base, id, iop->rbuf->data, n, arg);
+			r = sarg->fprocessor(base, id, iop->rbuf->str, n, arg);
 			if (Success_Base <= r) {
-				if (n == iop->rbuf->size) {
-					iop->rbuf->size = 0;
+				if (n == iop->rbuf->len) {
+					iop->rbuf->len = 0;
 					break;
 				}
-				ibuf_popfront(iop->rbuf, n);
+				tstr_popup(iop->rbuf, n);
 				continue;
 			}
 			return r;
@@ -51,10 +51,10 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 
 	// 写事件
 	if (events & EV_WRITE) {
-		if (iop->sbuf->size <= 0)
+		if (iop->sbuf->len <= 0)
 			return iop_mod(base, id, events);
 
-		n = socket_send(iop->s, iop->sbuf->data, iop->sbuf->size);
+		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
 		if (n < Success_Base) {
 			if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
 				r = sarg->ferror(base, id, EV_WRITE, arg);
@@ -65,10 +65,10 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 		}
 		if (n == Success_Base) return Success_Base;
 
-		if ((uint32_t)n >= iop->sbuf->size)
-			iop->sbuf->size = 0;
+		if ((uint32_t)n >= iop->sbuf->len)
+			iop->sbuf->len = 0;
 		else
-			ibuf_popfront(iop->sbuf, n);
+			tstr_popup(iop->sbuf, n);
 	}
 
 	// 超时时间处理
@@ -86,15 +86,13 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 	iop_t iop;
 	socket_t s;
 	ioptcp_t sarg = arg;
-	if (events & EV_DELETE) {
-		RETURN(Success_Base, "tcp server destroy[%s:%u].", sarg->host, sarg->port);
-	}
 
 	if (events & EV_READ) {
 		iop = base->iops + id;
 		s = socket_accept(iop->s, NULL, NULL);
 		if (INVALID_SOCKET == s) {
-			RETURN(Error_Fd, "socket_accept is error s = %"PRIu64".", (uint64_t)iop->s);
+			RETURN(Error_Fd, "socket_accept is error s = %"PRIu64" id = %u, socket_errno = %d.",
+				(uint64_t)iop->s, id, socket_errno);
 		}
 
 		r = iop_add(base, s, EV_READ, sarg->timeout, _iop_tcp_fdispatch, NULL);
@@ -107,24 +105,8 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 		iop->sarg = arg;
 		sarg->fconnect(base, r, NULL);
 	}
+
 	return Success_Base;
-}
-
-
-
-// 添加数据到 ilist_t base->tplist 后面
-static ilist_t _ilist_add(ilist_t list, void * arg) {
-	ilist_t node = malloc(sizeof(struct ilist));
-	if (!node) {
-		RETURN(list, "malloc sizeof(struct ilist) is error!");
-	}
-	node->data = arg;
-	node->next = NULL;
-
-	if (!list)
-		return node;
-	list->next = node;
-	return list;
 }
 
 //
@@ -171,7 +153,7 @@ int iop_add_ioptcp(iopbase_t base,
 	sarg->ferror = ferror;
 	sarg->fparser = fparser;
 	sarg->fprocessor = fprocessor;
-	base->tplist = _ilist_add(base->tplist, sarg);
+	base->tplist = vlist_add(base->tplist, sarg);
 
 	return iop_add(base, s, EV_READ, INVALID_SOCKET, _iop_add_connect, sarg);
 }

@@ -33,11 +33,19 @@ extern void iop_run(iopbase_t base);
 
 //
 // iop_run_pthread - 开启一个线程来跑这个轮询事件
-// base		: io调度对象
-// th		: 返回调度线程的id
-// return	: >=0 表示成功, <0 表示失败
+// base		: iop 操作类型
+// tid		: 返回的线程id指针
+// return	: >=Success_Base 表示成功, 否则失败
 //
-extern int iop_run_pthread(iopbase_t base, pthread_t * th);
+extern int iop_run_pthread(iopbase_t base, pthread_t * tid);
+
+//
+// iop_end_pthread - 结束一个线程的iop调度
+// base		: iop 操作类型
+// tid		: 返回的线程id指针
+// return	: void
+//
+extern void iop_end_pthread(iopbase_t base, pthread_t * tid);
 
 //
 // iop_stop - 退出循环事件调度
