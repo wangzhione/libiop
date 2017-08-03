@@ -9,16 +9,13 @@
 //
 unsigned 
 tstr_hash(const char * str) {
-	unsigned i, h, sp;
-	if (!str || !*str) 
-		return 1;
-
-	h = (unsigned)strlen(str);
-	sp = (h >> 5) + 1;
-	for (i = h; i >= sp; i -= sp)
-		h ^= (h << 5) + (h >> 2) + (unsigned char)str[i - 1];
-
-	return h ? h : 1;
+	register unsigned h = 0;
+	if (str) {
+		register unsigned c;
+		while ((c = *str++))
+			h = h * 131 + c;
+	}
+	return h;
 }
 
 //
@@ -74,9 +71,10 @@ tstr_dup(const char * str) {
 //
 tstr_t 
 tstr_freadend(const char * path) {
+	int err;
+	size_t rn;
 	tstr_t tstr;
 	char buf[BUFSIZ];
-	size_t rn;
 	FILE * txt = fopen(path, "rb");
 	if (NULL == txt) {
 		RETURN(NULL, "fopen r %s is error!", path);
@@ -88,18 +86,16 @@ tstr_freadend(const char * path) {
 	// 读取文件内容
 	do {
 		rn = fread(buf, sizeof(char), BUFSIZ, txt);
-		if (rn < 0)
-			break;
+		if ((err = ferror(txt))) {
+			fclose(txt);
+			tstr_delete(tstr);
+			RETURN(NULL, "fread err path = %d, %s.", err, path);
+		}
 		// 保存构建好的数据
 		tstr_appendn(tstr, buf, rn);
 	} while (rn == BUFSIZ);
 
 	fclose(txt);
-	// 最终错误检查
-	if (rn < 0) {
-		tstr_delete(tstr);
-		RETURN(NULL, "fread is error! path = %s. rn = %zu.", path, rn);
-	}
 
 	// 继续构建数据, 最后一行补充一个\0
 	tstr_cstr(tstr);
@@ -107,29 +103,29 @@ tstr_freadend(const char * path) {
 	return tstr;
 }
 
-static flag_e _tstr_fwrite(const char * path, const char * str, const char * mode) {
+static int _tstr_fwrite(const char * path, const char * str, const char * mode) {
 	FILE * txt;
 	if (!path || !*path || !str) {
-		RETURN(Error_Param, "check !path || !*path || !str'!!!");
+		RETURN(ErrParam, "check !path || !*path || !str'!!!");
 	}
 
 	// 打开文件, 写入消息, 关闭文件
 	if ((txt = fopen(path, mode)) == NULL) {
-		RETURN(Error_Fd, "fopen mode = '%s', path = '%s' error!", mode, path);
+		RETURN(ErrFd, "fopen mode = '%s', path = '%s' error!", mode, path);
 	}
 	fputs(str, txt);
 	fclose(txt);
 
-	return Success_Base;
+	return SufBase;
 }
 
 //
 // 将c串str覆盖写入到path路径的文件中
 // path		: 文件路径
 // str		: c的串内容
-// return	: Success_Base | Error_Param | Error_Fd
+// return	: SufBase | ErrParam | ErrFd
 //
-inline flag_e 
+inline int 
 tstr_fwrites(const char * path, const char * str) {
 	return _tstr_fwrite(path, str, "wb");
 }
@@ -138,9 +134,9 @@ tstr_fwrites(const char * path, const char * str) {
 // 将c串str写入到path路径的文件中末尾
 // path		: 文件路径
 // str		: c的串内容
-// return	: Success_Base | Error_Param | Error_Fd
+// return	: SufBase | ErrParam | ErrFd
 //
-inline flag_e 
+inline int 
 tstr_fappends(const char * path, const char * str) {
 	return _tstr_fwrite(path, str, "ab");
 }
@@ -184,32 +180,33 @@ tstr_delete(tstr_t tstr) {
 }
 
 // 文本字符串创建的初始化大小
-#define _INT_TSTRING	(32)
+#define _UINT_TSTR		(32u)
 
 //
 // tstr_expand - 为当前字符串扩容, 属于低级api
 // tstr		: 可变字符串
 // len		: 扩容的长度
-// return	: void
+// return	: tstr->str + tstr->len 位置的串
 //
-void
+char *
 tstr_expand(tstr_t tstr, size_t len) {
-	char * nstr;
 	size_t cap = tstr->cap;
-	if ((len += tstr->len) < cap)
-		return;
+	if ((len += tstr->len) >= cap) {
+		char * nstr;
+		for (cap = cap < _UINT_TSTR ? _UINT_TSTR : cap; cap < len; cap <<= 1)
+			;
+		// 开始分配内存
+		if ((nstr = realloc(tstr->str, cap)) == NULL) {
+			tstr_delete(tstr);
+			CERR_EXIT("realloc cap = %zu empty!!!", cap);
+		}
 
-	// 开始分配内存
-	for (cap = cap < _INT_TSTRING ? _INT_TSTRING : cap; cap < len; cap <<= 1)
-		;
-	if ((nstr = realloc(tstr->str, cap)) == NULL) {
-		tstr_delete(tstr);
-		CERR_EXIT("realloc cap = %zu empty!!!", cap);
+		// 重新内联内存
+		tstr->str = nstr;
+		tstr->cap = cap;
 	}
 
-	// 重新内联内存
-	tstr->str = nstr;
-	tstr->cap = cap;
+	return tstr->str + tstr->len;
 }
 
 //

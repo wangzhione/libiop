@@ -3,7 +3,7 @@
 
 // 默认event 调度事件
 static inline int _iop_default_event(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
-	return Success_Base;
+	return SufBase;
 }
 
 // 构建对象
@@ -49,11 +49,11 @@ static iopbase_t _iopbase_new(uint32_t maxio) {
 // iop_create - 创建新的iopbase_t 对象, io模型集
 // return	: iobase_t 模型,失败返回NULL
 //
-inline iopbase_t 
+inline iopbase_t
 iop_create(void) {
 	iopbase_t base = _iopbase_new(_INT_POLL);
 	if (base) {
-		if (Success_Base > iop_init_pool(base, _INT_POLL)) {
+		if (SufBase > iop_init_pool(base, _INT_POLL)) {
 			iop_delete(base);
 			RETURN(NULL, "iop_init_pool _INT_POLL = %d error!", _INT_POLL);
 		}
@@ -66,7 +66,7 @@ iop_create(void) {
 // base		: 待销毁的io基础对象
 // return	: void
 //
-void 
+void
 iop_delete(iopbase_t base) {
 	uint32_t i;
 	if (!base) return;
@@ -101,14 +101,14 @@ iop_delete(iopbase_t base) {
 // base		: io调度对象
 // return	: 本次调度处理事件总数
 //
-int 
+int
 iop_dispatch(iopbase_t base) {
 	iop_t iop;
 	int curid, nextid, r;
 
 	// 调度一次
 	r = base->op.fdispatch(base, base->dispatchval);
-	if (r < Success_Base)
+	if (r < SufBase)
 		return r;
 
 	// 判断时间信息
@@ -138,7 +138,7 @@ iop_dispatch(iopbase_t base) {
 // base		: io事件集基础对象
 // return	: void
 //
-void 
+void
 iop_run(iopbase_t base) {
 	while (!base->flag) {
 		iop_dispatch(base);
@@ -155,9 +155,9 @@ static inline void * _run_thread(void * arg) {
 // iop_run_pthread - 开启一个线程来跑这个轮询事件
 // base		: iop 操作类型
 // tid		: 返回的线程id指针
-// return	: >=Success_Base 表示成功, 否则失败
+// return	: >=SufBase 表示成功, 否则失败
 //
-int 
+int
 iop_run_pthread(iopbase_t base, pthread_t * tid) {
 	int r;
 	pthread_attr_t attr;
@@ -167,7 +167,7 @@ iop_run_pthread(iopbase_t base, pthread_t * tid) {
 
 	// 线程启动起来
 	r = pthread_create(tid, &attr, _run_thread, base);
-	if (r < Success_Base) {
+	if (r < SufBase) {
 		iop_delete(base);
 		RETURN(r, "pthread_create _run_thread is error r = %d!", r);
 	}
@@ -182,7 +182,7 @@ iop_run_pthread(iopbase_t base, pthread_t * tid) {
 // tid		: 线程操作的类型
 // return	: void
 //
-void 
+void
 iop_end_pthread(iopbase_t base, pthread_t * tid) {
 	if (!base || !tid)
 		RETURN(NIL, "check param is erro base = %p, tid = %p.", base, tid);
@@ -196,7 +196,7 @@ iop_end_pthread(iopbase_t base, pthread_t * tid) {
 // base		: io事件集基础对象
 // return	: void
 //
-inline void 
+inline void
 iop_stop(iopbase_t base) {
 	base->flag = true;
 }
@@ -227,12 +227,12 @@ static iop_t _iop_get_freehead(iopbase_t base) {
 // arg		: 用户参数
 // return	: 成功返回iop的id, 失败返回SOCKET_ERROR
 //
-uint32_t 
+uint32_t
 iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, void * arg) {
 	int r = 0;
 	iop_t iop = _iop_get_freehead(base);
 	if (NULL == iop) {
-		RETURN(Error_Base, "_iop_get_freehead is base error = %p.", base);
+		RETURN(ErrBase, "_iop_get_freehead is base error = %p.", base);
 	}
 
 	iop->s = s;
@@ -249,7 +249,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 		iop->type = IOP_IO;
 		socket_set_nonblock(s);
 		r = base->op.fadd(base, iop->id, s, ets);
-		if (r < Success_Base) {
+		if (r < SufBase) {
 			iop_del(base, iop->id);
 			return r;
 		}
@@ -264,7 +264,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 // id		: iop事件id
 // return	: >=0 成功, <0 表示失败
 //
-int 
+int
 iop_del(iopbase_t base, uint32_t id) {
 	iop_t iop = base->iops + id;
 	switch (iop->type) {
@@ -302,7 +302,7 @@ iop_del(iopbase_t base, uint32_t id) {
 
 	iop->type = IOP_FREE;
 
-	return Success_Base;
+	return SufBase;
 }
 
 //
@@ -312,23 +312,23 @@ iop_del(iopbase_t base, uint32_t id) {
 // events	: 新的events事件
 // return	: >=0 成功, <0 表示失败
 //
-int 
+int
 iop_mod(iopbase_t base, uint32_t id, uint32_t events) {
 	iop_t iop = base->iops + id;
 	if (iop->type != IOP_IO) {
-		RETURN(Error_Base, "iop type is error = [%u, %u].", iop->type, id);
+		RETURN(ErrBase, "iop type is error = [%u, %u].", iop->type, id);
 	}
 	if (iop->s == INVALID_SOCKET) {
-		RETURN(Error_Base, "iop socket is error = [%"PRIu64", %u].", (int64_t)iop->s, id);
+		RETURN(ErrBase, "iop socket is error = [%"PRIu64", %u].", (int64_t)iop->s, id);
 	}
 
 	return base->op.fmod(base, iop->id, iop->s, events);
 }
 
 // iop 轮询事件的发送接收操作, 发送没变化, 接收放在接收缓冲区
-int 
+int
 iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
-	int r = Success_Base;
+	int r = SufBase;
 	const char * csts = data;
 	iop_t iop = base->iops + id;
 	tstr_t buf = iop->sbuf;
@@ -336,10 +336,10 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 	if (buf->len <= 0) {
 		r = socket_send(iop->s, data, len);
 		if (r >= 0 && (uint32_t)r >= len)
-			return Success_Base;
+			return SufBase;
 		if (r < 0) {
 			if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
-				RETURN(Error_Base, "socket_send socker_errno = %u, r = %d.", socket_errno, r);
+				RETURN(ErrBase, "socket_send error r = %d.", r);
 			}
 			r = 0;
 		}
@@ -348,27 +348,27 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 
 	// 剩余的发送部分, 下次再发
 	if (buf->cap > _INT_MAXBUF) {
-		RETURN(Error_Alloc, "iop->sbuf->capacity error too length = %zd.", buf->cap);
+		RETURN(ErrAlloc, "iop->sbuf->capacity error too length = %zd.", buf->cap);
 	}
 
 	// 开始填充内存
 	tstr_appendn(buf, csts, len - r);
 
 	if (iop->events & EV_WRITE)
-		return Success_Base;
-	
+		return SufBase;
+
 	return iop_mod(base, id, iop->events | EV_WRITE);;
 }
 
 
-int 
+int
 iop_recv(iopbase_t base, uint32_t id) {
 	int r;
 	iop_t iop = base->iops + id;
 	tstr_t buf = iop->rbuf;
 
 	if (buf->cap > _INT_MAXBUF) {
-		RETURN(Error_Alloc, "iop->rbuf->capacity error too length = %zd.", buf->cap);
+		RETURN(ErrAlloc, "iop->rbuf->capacity error too length = %zd.", buf->cap);
 	}
 	tstr_expand(buf, _INT_RECV);
 
@@ -376,15 +376,15 @@ iop_recv(iopbase_t base, uint32_t id) {
 	r = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);
 	if (r < 0) {
 		if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
-			RETURN(Error_Base, "socket_read socker_errno = %u, r = %d.", socket_errno, r);
+			RETURN(ErrBase, "socket_read error r = %d.", r);
 		}
 		return r;
 	}
 
 	// 返回最终结果
 	if (r == 0)
-		return Success_Close;
+		return ErrClose;
 
 	buf->len += r;
-	return Success_Base;
+	return SufBase;
 }

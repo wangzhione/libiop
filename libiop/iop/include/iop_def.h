@@ -1,9 +1,9 @@
-﻿#ifndef _H_LIBIOP_IOP_DEF
-#define _H_LIBIOP_IOP_DEF
+﻿#ifndef _H_SIMPLEC_IOP_DEF
+#define _H_SIMPLEC_IOP_DEF
 
-#include <iop_util.h>
-#include <vlist.h>
 #include <tstr.h>
+#include <vlist.h>
+#include <iop_util.h>
 
 //
 // EV_XXX 是特定消息处理动作的标识
@@ -58,7 +58,7 @@ typedef int (* iop_parse_f)(const char * buf, uint32_t len);
 typedef int (* iop_processor_f)(iopbase_t base, uint32_t id, char * buf, uint32_t len, void * arg);
 
 //
-// iop_event_f - 事件毁掉函数, 返回Error_Base代表要删除对象, 返回Success_Base代表正常
+// iop_event_f - 事件毁掉函数, 返回ErrBase代表要删除对象, 返回SufBase代表正常
 // base		: iopbase 结构指针, iop基础对象集
 // id		: iop对象的id
 // arg		: 自带的参数
@@ -100,18 +100,17 @@ struct iop {
 };
 
 struct iopop {
-	const char * name;										// 模块的名称
-	void (* ffree)(iopbase_t);								// 资源释放接口
-	int (* fdispatch)(iopbase_t, uint32_t);					// 模型调度接口
-	int (* fadd)(iopbase_t, uint32_t, socket_t, uint32_t);	// 添加事件接口
-	int (* fdel)(iopbase_t, uint32_t, socket_t);			// 删除事件接口
-	int (* fmod)(iopbase_t, uint32_t, socket_t, uint32_t);	// 修改事件接口
+	void(*ffree)(iopbase_t);								// 资源释放接口
+	int(*fdispatch)(iopbase_t, uint32_t);					// 模型调度接口
+	int(*fadd)(iopbase_t, uint32_t, socket_t, uint32_t);	// 添加事件接口
+	int(*fdel)(iopbase_t, uint32_t, socket_t);			// 删除事件接口
+	int(*fmod)(iopbase_t, uint32_t, socket_t, uint32_t);	// 修改事件接口
 };
 
 typedef struct ilist {
 	struct ilist * next;
 	void * data;
-} * ilist_t;
+} *ilist_t;
 
 struct iopbase {
 	iop_t iops;				// 所有的iop对象
@@ -137,7 +136,7 @@ struct iopbase {
 // iop_del - 从iopbase_t中删除指定id的事件对象
 // base		: iopbase_t指针
 // id		: 事件对象id
-// return	: 成功返回Success_Base, 失败返回Error_Base
+// return	: 成功返回SufBase, 失败返回ErrBase
 //
 extern int iop_del(iopbase_t base, uint32_t id);
 
@@ -152,11 +151,11 @@ extern int iop_del(iopbase_t base, uint32_t id);
 	do {\
 		if(iop->type != IOP_FREE) {\
 			int $type = iop->fevent(base, iop->id, events, iop->arg);\
-			if ($type >= Success_Base && $type != Success_Close)\
+			if ($type >= SufBase)\
 				iop->lastt = base->curt;\
 			else\
 				iop_del(base, iop->id);\
 		}\
 	} while(0)
 
-#endif // !_H_LIBIOP_IOP_DEF
+#endif // !_H_SIMPLEC_IOP_DEF

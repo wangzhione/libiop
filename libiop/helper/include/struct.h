@@ -8,12 +8,15 @@
 // author : wz
 //
 
-#include <ctype.h>
+#include <math.h>
+#include <time.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <float.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdarg.h>
@@ -29,9 +32,9 @@
 #ifndef _H_CERR
 #define _H_CERR
 
+#undef	CERR
 #define CERR(fmt, ...) \
-	fprintf(stderr, "[%s:%s:%d][errno %d:%s]" fmt "\n",\
-		__FILE__, __func__, __LINE__, errno, strerror(errno), ##__VA_ARGS__)
+	fprintf(stderr, "[%s:%s:%d][errno %d:%s]" fmt "\n", __FILE__, __func__, __LINE__, errno, strerror(errno), ##__VA_ARGS__)
 
 #define CERR_EXIT(fmt,...) \
 	CERR(fmt, ##__VA_ARGS__), exit(EXIT_FAILURE)
@@ -76,33 +79,35 @@
 
 #ifndef _ENUM_FLAG
 //
-// flag_e - 全局操作基本行为返回的枚举, 用于判断返回值状态的状态码
+// int - 函数返回值全局状态码
 // >= 0 标识 Success状态, < 0 标识 Error状态
 //
-typedef enum {
-	Success_Exist	= +2,			//希望存在,设置之前已经存在了.
-	Success_Close	= +1,			//文件描述符读取关闭, 读取完毕也会返回这个
-	Success_Base	= +0,			//结果正确的返回宏
+enum flag {
 
-	Error_Base		= -1,			//错误基类型, 所有错误都可用它, 在不清楚的情况下
-	Error_Param		= -2,			//调用的参数错误
-	Error_Alloc		= -3,			//内存分配错误
-	Error_Fd		= -4,			//文件打开失败
-	Error_TOUT		= -5,			//超时错误
-} flag_e;
+	ErrParse	= -8,  //协议解析错误
+	ErrClose    = -7,  //句柄打开失败, 读取完毕也返回这个
+	ErrEmpty    = -6,  //返回数据为空
+	ErrTout     = -5,  //操作超时错误
+	ErrFd       = -4,  //文件打开失败
+	ErrAlloc    = -3,  //内存分配错误
+	ErrParam    = -2,  //输入参数错误
+	ErrBase	    = -1,  //错误基础类型, 所有位置错误都可用它
+
+	SufBase     = +0,  //基础正确类型
+};
 
 //
 // 定义一些通用的函数指针帮助, 主要用于基库的封装.
 // 有构造函数, 析构函数, 比较函数, 轮询函数 ... 
 // cmp_f	- int cmp(const void * ln, const void * rn); 标准结构
-// each_f	- flag_e <=> int, echh循环操作, arg 外部参数, node 内部节点
+// each_f	- int <-> int, each循环操作, arg 外部参数, node 内部节点
 // start_f	- pthread 线程启动的辅助函数宏, 方便优化
 //
-typedef int (* cmp_f)();
-typedef void * (* new_f)();
-typedef void (* die_f)(void * node);
-typedef flag_e (* each_f)(void * node, void * arg);
-typedef void * (* start_f) (void * arg);
+typedef int    (* cmp_f  )();
+typedef void * (* new_f  )();
+typedef void   (* die_f  )(void * node);
+typedef int    (* each_f )(void * node, void * arg);
+typedef void * (* start_f)(void * arg);
 
 #define _ENUM_FLAG
 #endif // !_ENUM_FLAG

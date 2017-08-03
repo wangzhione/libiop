@@ -7,20 +7,17 @@
     <Filter Include="main">
       <UniqueIdentifier>{a0f72986-ba07-4f83-beec-0305a7b0151d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="pthread\include">
-      <UniqueIdentifier>{82ab6dc5-50e9-45c2-bea7-5d3768589782}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="pthread\dll">
-      <UniqueIdentifier>{407c2765-9385-4e8f-bfc9-728a3dcc8d5f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="pthread\lib">
-      <UniqueIdentifier>{88092f95-0b4e-4cf5-8fa8-15c28071f4d1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="iop">
       <UniqueIdentifier>{949b5e19-f84e-48b8-b4b3-ffd5b3f77de5}</UniqueIdentifier>
     </Filter>
     <Filter Include="iop\include">
       <UniqueIdentifier>{6b816b48-4ffd-44d9-90ed-ca6be553ce4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pthread\include">
+      <UniqueIdentifier>{908a5265-d6e0-42d6-b762-c76f273952a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pthread\lib">
+      <UniqueIdentifier>{c5ba14ce-eb2f-4965-a60c-fc9b81d8bcd2}</UniqueIdentifier>
     </Filter>
     <Filter Include="helper">
       <UniqueIdentifier>{97d9a746-e5ac-4599-b615-59b1de4ec6b2}</UniqueIdentifier>
@@ -30,15 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pthread\include\pthread.h">
-      <Filter>pthread\include</Filter>
-    </ClInclude>
-    <ClInclude Include="pthread\include\sched.h">
-      <Filter>pthread\include</Filter>
-    </ClInclude>
-    <ClInclude Include="pthread\include\semaphore.h">
-      <Filter>pthread\include</Filter>
-    </ClInclude>
     <ClInclude Include="iop\include\iop_util.h">
       <Filter>iop\include</Filter>
     </ClInclude>
@@ -69,6 +57,15 @@
     <ClInclude Include="helper\include\vlist.h">
       <Filter>helper\inlcude</Filter>
     </ClInclude>
+    <ClInclude Include="pthread\include\pthread.h">
+      <Filter>pthread\include</Filter>
+    </ClInclude>
+    <ClInclude Include="pthread\include\sched.h">
+      <Filter>pthread\include</Filter>
+    </ClInclude>
+    <ClInclude Include="pthread\include\semaphore.h">
+      <Filter>pthread\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
@@ -92,17 +89,15 @@
     <ClCompile Include="helper\vlist.c">
       <Filter>helper</Filter>
     </ClCompile>
+    <ClCompile Include="helper\sh_strerr.c">
+      <Filter>helper</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="pthread\dll\pthread_dll.dll">
-      <Filter>pthread\dll</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="pthread\lib\pthread_dll.lib">
+    <Library Include="pthread\lib\pthread_lib.lib">
       <Filter>pthread\lib</Filter>
     </Library>
   </ItemGroup>

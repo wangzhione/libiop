@@ -1,4 +1,4 @@
-﻿#if defined(_HAVE_SELECT)
+﻿#if !defined(_HAVE_EPOLL)
 
 #include <time.h>
 #include <iop_poll.h>
@@ -11,7 +11,7 @@ typedef struct selects {
 	fd_set wset;
 	fd_set orset;
 	fd_set owset;
-} * selects_t;
+} *selects_t;
 
 // 开始销毁函数
 static inline void _selects_free(iopbase_t base) {
@@ -47,7 +47,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	do {
 		// 时间tv会改变, 时间总的而言不变化
 		n = select(mdata->maxfd + 1, &mdata->orset, &mdata->owset, NULL, &tv);
-	}  while (n < Success_Base && socket_errno == SOCKET_EINTR);
+	} while (n < SufBase && socket_errno == SOCKET_EINTR);
 #endif
 	time(&base->curt);
 	if (n <= 0)
@@ -91,7 +91,7 @@ static int _selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 		mdata->maxfd = s;
 #endif
 
-	return Success_Base;
+	return SufBase;
 }
 
 // select 删除句柄
@@ -105,7 +105,7 @@ static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
 	if (s >= mdata->maxfd) {
 		int curid = base->iohead;
 		mdata->maxfd = SOCKET_ERROR;
-		
+
 		while (curid != SOCKET_ERROR) {
 			iop_t iop = base->iops + curid;
 			if (curid != id) {
@@ -117,7 +117,7 @@ static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
 	}
 #endif
 
-	return Success_Base;
+	return SufBase;
 }
 
 // 事件修改, 其实只处理了读写事件
@@ -133,42 +133,32 @@ static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 	else
 		FD_CLR(s, &mdata->wset);
 
-	return Success_Base;
+	return SufBase;
 }
 
 //
 // iop_init_pool - 通信的底层接口
 // base		: 总的iop对象管理器
 // maxsz	: 开启的最大处理数
-// return	: Success_Base 表示成功
+// return	: SufBase 表示成功
 //
-int 
+int
 iop_init_pool(iopbase_t base, unsigned maxsz) {
 	iopop_t op;
 	selects_t mdata = calloc(1, sizeof(struct selects));
 	if (NULL == mdata) {
-		CERR("malloc sizeof(struct selects) is error!");
-		return Error_Alloc;
+		RETURN(ErrAlloc, "malloc sizeof(struct selects) is error!");
 	}
+	base->mdata = mdata;
 
 	op = &base->op;
-
-#ifdef _MSC_VER
-	op->name = "winds select";
-#else
-	mdata->maxfd = SOCKET_ERROR;
-	op->name = "linux select";
-#endif
-
 	op->ffree = _selects_free;
 	op->fdispatch = _selects_dispatch;
 	op->fadd = _selects_add;
 	op->fdel = _selects_del;
 	op->fmod = _selects_mod;
 
-	base->mdata = mdata;
-
-	return Success_Base;
+	return SufBase;
 }
 
 #endif

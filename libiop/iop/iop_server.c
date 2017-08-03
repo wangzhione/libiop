@@ -8,35 +8,35 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 	// 销毁事件
 	if (events & EV_DELETE) {
 		sarg->fdestroy(base, id, arg);
-		return Success_Base;
+		return SufBase;
 	}
 
 	// 读事件
 	if (events & EV_READ) {
 		n = iop_recv(base, id);
-		if (n < Success_Base) {
+		// 服务器关闭, 直接返回关闭操作
+		if (n == ErrClose)
+			return ErrClose;
+
+		if (n < SufBase) {
 			r = sarg->ferror(base, id, EV_READ, arg);
 			return r;
 		}
 
-		// 服务器关闭, 直接返回关闭操作
-		if (n == Success_Close)
-			return Success_Close;
-
 		for (;;) {
 			// 读取链接关闭
 			n = sarg->fparser(iop->rbuf->str, iop->rbuf->len);
-			if (n < Success_Base) {
+			if (n < SufBase) {
 				r = sarg->ferror(base, id, EV_CREATE, arg);
-				if (r < Success_Base)
+				if (r < SufBase)
 					return r;
 				break;
 			}
-			if (n == Success_Base)
+			if (n == SufBase)
 				break;
 
 			r = sarg->fprocessor(base, id, iop->rbuf->str, n, arg);
-			if (Success_Base <= r) {
+			if (SufBase <= r) {
 				if (n == iop->rbuf->len) {
 					iop->rbuf->len = 0;
 					break;
@@ -55,15 +55,15 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 			return iop_mod(base, id, events);
 
 		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
-		if (n < Success_Base) {
+		if (n < SufBase) {
 			if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
 				r = sarg->ferror(base, id, EV_WRITE, arg);
-				if (r < Success_Base)
+				if (r < SufBase)
 					return r;
 			}
-			return Success_Base;
+			return SufBase;
 		}
-		if (n == Success_Base) return Success_Base;
+		if (n == SufBase) return SufBase;
 
 		if ((uint32_t)n >= iop->sbuf->len)
 			iop->sbuf->len = 0;
@@ -74,11 +74,11 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 	// 超时时间处理
 	if (events & EV_TIMEOUT) {
 		r = sarg->ferror(base, id, EV_TIMEOUT, arg);
-		if (r < Success_Base)
+		if (r < SufBase)
 			return r;
 	}
 
-	return Success_Base;
+	return SufBase;
 }
 
 static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
@@ -91,12 +91,11 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 		iop = base->iops + id;
 		s = socket_accept(iop->s, NULL, NULL);
 		if (INVALID_SOCKET == s) {
-			RETURN(Error_Fd, "socket_accept is error s = %"PRIu64" id = %u, socket_errno = %d.",
-				(uint64_t)iop->s, id, socket_errno);
+			RETURN(ErrFd, "socket_accept is error id = %u.", id);
 		}
 
 		r = iop_add(base, s, EV_READ, sarg->timeout, _iop_tcp_fdispatch, NULL);
-		if (r < Success_Base) {
+		if (r < SufBase) {
 			socket_close(r);
 			RETURN(r, "iop_add EV_READ timeout = %d, r = %u", sarg->timeout, r);
 		}
@@ -106,7 +105,7 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 		sarg->fconnect(base, r, NULL);
 	}
 
-	return Success_Base;
+	return SufBase;
 }
 
 //
@@ -120,7 +119,7 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 // fconnect		: 当连接创建时候回调
 // fdestroy		: 退出时间的回调
 // ferror		: 错误的时候回调
-// return		: 成功返回>=0的id, 失败返回 -1 Error_Base
+// return		: 成功返回>=0的id, 失败返回 -1 ErrBase
 //
 int iop_add_ioptcp(iopbase_t base,
 	const char * host, uint16_t port, uint32_t timeout,
@@ -132,14 +131,14 @@ int iop_add_ioptcp(iopbase_t base,
 	// 构建socket tcp 服务
 	s = socket_tcp(host, port);
 	if (s == INVALID_SOCKET) {
-		RETURN(Error_Base, "socket_tcp error host, post = %s | %u.", host, port);
+		RETURN(ErrBase, "socket_tcp error host, post = %s | %u.", host, port);
 	}
 
 	// 构建系统参数
 	sarg = calloc(1, sizeof(struct ioptcp));
 	if (NULL == sarg) {
 		socket_close(s);
-		RETURN(Error_Alloc, "calloc struct ioptcp is error!");
+		RETURN(ErrAlloc, "calloc struct ioptcp is error!");
 	}
 
 	// 开始复制内容

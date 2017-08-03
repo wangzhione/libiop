@@ -1,6 +1,5 @@
 ﻿#if defined(__GNUC__) && defined(_HAVE_EPOLL)
 
-#include <time.h>
 #include <iop_poll.h>
 #include <sys/epoll.h>
 
@@ -8,7 +7,7 @@ typedef struct epolls {
 	int efd;					// epoll 文件描述符与
 	uint32_t ets;				// epoll 数组的个数
 	struct epoll_event evs[];	// 事件数组
-} * epolls_t;
+} *epolls_t;
 
 // 发送事件转换
 static inline uint32_t _to_events(uint32_t what) {
@@ -54,8 +53,8 @@ static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 
 	do
 		n = epoll_wait(mdata->efd, mdata->evs, mdata->ets, timeout);
-	while (n < Success_Base && socket_errno == SOCKET_EINTR);
-	
+	while (n < SufBase && socket_errno == SOCKET_EINTR);
+
 	// 得到当前时间
 	time(&base->curt);
 	for (i = 0; i < n; ++i) {
@@ -103,35 +102,32 @@ static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 // iop_init_pool - 通信的底层接口
 // base		: 总的iop对象管理器
 // maxsz	: 开启的最大处理数
-// return	: Success_Base 表示成功
+// return	: SufBase 表示成功
 //
-int 
+int
 iop_init_pool(iopbase_t base, unsigned maxsz) {
 	epolls_t mdata;
 	iopop_t op = &base->op;
-
 	int epfd = epoll_create(_INT_POLL);
-	if (epfd < Success_Base) {
-		RETURN(Error_Base, "epoll_create %d is error!", _INT_POLL);
+	if (epfd < SufBase) {
+		RETURN(ErrBase, "epoll_create %d is error!", _INT_POLL);
 	}
 
 	mdata = malloc(sizeof(struct epolls) + maxsz * sizeof(struct epoll_event));
 	if (NULL == mdata) {
-		RETURN(Error_Alloc, "malloc error epolls maxsz = %u.", maxsz);
+		RETURN(ErrAlloc, "malloc error epolls maxsz = %u.", maxsz);
 	}
 	mdata->efd = epfd;
 	mdata->ets = maxsz;
+	base->mdata = mdata;
 
-	op->name = "linux epoll";
 	op->ffree = _epolls_free;
 	op->fdispatch = _epolls_dispatch;
 	op->fadd = _epolls_add;
 	op->fdel = _epolls_del;
 	op->fmod = _epolls_mod;
 
-	base->mdata = mdata;
-
-	return Success_Base;
+	return SufBase;
 }
 
 #endif // !__GNUC__ or !_HAVE_EPOLL
