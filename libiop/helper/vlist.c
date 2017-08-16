@@ -26,7 +26,7 @@ vlist_add(vlist_t list, void * data) {
 // return	: void
 //
 void 
-vlist_delete_(vlist_t list, die_f die) {
+vlist_delete_(vlist_t list, node_f die) {
 	while (list) {
 		vlist_t next = list->next;
 		if (die)
@@ -43,7 +43,7 @@ vlist_delete_(vlist_t list, die_f die) {
 // return	: void
 //
 void 
-vlist_each(vlist_t list, die_f echo) {
+vlist_each(vlist_t list, node_f echo) {
 	while (list) {
 		echo(list->data);
 		list = list->next;

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="helper\include\scsocket.h" />
     <ClInclude Include="helper\include\struct.h" />
     <ClInclude Include="helper\include\tstr.h" />
     <ClInclude Include="helper\include\vlist.h" />
@@ -28,19 +29,18 @@
     <ClInclude Include="iop\include\iop_poll$select.h" />
     <ClInclude Include="iop\include\iop_poll.h" />
     <ClInclude Include="iop\include\iop_server.h" />
-    <ClInclude Include="iop\include\iop_util.h" />
     <ClInclude Include="pthread\include\pthread.h" />
     <ClInclude Include="pthread\include\sched.h" />
     <ClInclude Include="pthread\include\semaphore.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="helper\sh_strerr.c" />
+    <ClCompile Include="helper\scsocket.c" />
+    <ClCompile Include="helper\strerr.c" />
     <ClCompile Include="helper\tstr.c" />
     <ClCompile Include="helper\vlist.c" />
     <ClCompile Include="iop\iop.c" />
     <ClCompile Include="iop\iop_poll.c" />
     <ClCompile Include="iop\iop_server.c" />
-    <ClCompile Include="iop\iop_util.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
@@ -54,32 +54,32 @@
     <ProjectGuid>{82E96D69-7C2C-400C-A2F5-C98121D80CD6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libiop</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>

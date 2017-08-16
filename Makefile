@@ -42,7 +42,7 @@ all:main.exe
 #
 # *.o 映射到 $(TAR_PATH)/$(BUILD_DIR)/*.o
 #
-main.exe:main.o tstr.o vlist.o iop_util.o iop_poll.o iop.o iop_server.o sh_strerr.o
+main.exe:main.o tstr.o vlist.o scsocket.o iop_poll.o iop.o iop_server.o strerr.o
 	$(RUN)
 
 main.o:$(SRC_PATH)/main.c | $(TAR_PATH)

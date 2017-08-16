@@ -25,7 +25,7 @@ extern vlist_t vlist_add(vlist_t list, void * data);
 // free		: 默认的销毁函数
 // return	: void
 //
-extern void vlist_delete_(vlist_t list, die_f die);
+extern void vlist_delete_(vlist_t list, node_f die);
 #define vlist_delete(list) \
 	do {\
 		vlist_delete_(list, free);\
@@ -38,6 +38,6 @@ extern void vlist_delete_(vlist_t list, die_f die);
 // echo		: 轮询执行的函数结点
 // return	: void
 //
-extern void vlist_each(vlist_t list, die_f echo);
+extern void vlist_each(vlist_t list, node_f echo);
 
 #endif // !_H_SIMPLEC_VLIST

@@ -9,7 +9,6 @@
 //
 
 #include <math.h>
-#include <time.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <float.h>
@@ -34,13 +33,13 @@
 
 #undef	CERR
 #define CERR(fmt, ...) \
-	fprintf(stderr, "[%s:%s:%d][errno %d:%s]" fmt "\n", __FILE__, __func__, __LINE__, errno, strerror(errno), ##__VA_ARGS__)
+	fprintf(stderr, "[%s:%s:%d][%d:%s]" fmt "\n", __FILE__, __func__, __LINE__, errno, strerror(errno), ##__VA_ARGS__)
 
-#define CERR_EXIT(fmt,...) \
+#define CERR_EXIT(fmt, ...) \
 	CERR(fmt, ##__VA_ARGS__), exit(EXIT_FAILURE)
 
-#define CERR_IF(code) \
-	if((code) < 0) \
+#define CERR_IF(code)	\
+	if((code) < 0)		\
 		CERR_EXIT(#code)
 
 //
@@ -83,7 +82,6 @@
 // >= 0 标识 Success状态, < 0 标识 Error状态
 //
 enum flag {
-
 	ErrParse	= -8,  //协议解析错误
 	ErrClose    = -7,  //句柄打开失败, 读取完毕也返回这个
 	ErrEmpty    = -6,  //返回数据为空
@@ -99,13 +97,13 @@ enum flag {
 //
 // 定义一些通用的函数指针帮助, 主要用于基库的封装.
 // 有构造函数, 析构函数, 比较函数, 轮询函数 ... 
-// cmp_f	- int cmp(const void * ln, const void * rn); 标准结构
+// icmp_f	- int icmp(const void * ln, const void * rn); 标准结构
 // each_f	- int <-> int, each循环操作, arg 外部参数, node 内部节点
 // start_f	- pthread 线程启动的辅助函数宏, 方便优化
 //
-typedef int    (* cmp_f  )();
-typedef void * (* new_f  )();
-typedef void   (* die_f  )(void * node);
+typedef int    (* icmp_f )( );
+typedef void * (* vnew_f )( );
+typedef void   (* node_f )(void * node);
 typedef int    (* each_f )(void * node, void * arg);
 typedef void * (* start_f)(void * arg);
 

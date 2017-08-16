@@ -1,19 +1,22 @@
 ﻿#ifndef _H_SIMPLEC_SCSOCKET
 #define _H_SIMPLEC_SCSOCKET
 
+#include <time.h>
 #include <struct.h>
+#include <signal.h>
+
+extern const char * strerr(int error);
 
 //
-//	- 跨平台的丑陋从这里开始, 封装一些共用实现
-//  __GNUC		=> linux 平台特殊操作		-> gcc
-//  __MSC_VER	=> winds 平台特殊操作		-> vs
+// IGNORE_SIGPIPE - 管道破裂,忽略SIGPIPE信号
 //
+#define IGNORE_SIGNAL(sig)	signal(sig, SIG_IGN)
+
 #ifdef __GNUC__
 
 #include <fcntl.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <signal.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <sys/un.h>
@@ -25,31 +28,19 @@
 // This is used instead of -1, since the. by WinSock
 //
 #define INVALID_SOCKET			(~0)
-#define SOCKET_ERROR            (-1)
+#define SOCKET_ERROR			(-1)
 
-#define socket_errno			errno
-#define SOCKET_EINTR			EINTR
-#define SOCKET_EAGAIN			EAGAIN
-#define SOCKET_EINVAL			EINVAL
-#define SOCKET_EINPROGRESS		EINPROGRESS
-#define SOCKET_EMFILE			EMFILE
-#define SOCKET_ENFILE			ENFILE
-
-// 链接还在进行中, linux这里显示 EINPROGRESS，winds应该是 WSAEWOULDBLOCK
-#define SOCKET_CONNECTED		EINPROGRESS
-
-#if defined(EWOULDBOCK)
-#define SOCKET_EWOULDBOCK		EWOULDBOCK
-#else
-#define SOCKET_EWOULDBOCK		EAGAIN
+#if !defined(EWOULDBOCK)
+#define EWOULDBOCK				EAGAIN
 #endif
 
-#define IGNORE_SIGNAL(sig)			signal(sig, SIG_IGN)
+// connect链接还在进行中, linux显示 EINPROGRESS，winds是 WSAEWOULDBLOCK
+#define ECONNECTED				EINPROGRESS
 
-#define SET_RLIMIT_NOFILE(num) \
-	do {\
-		struct rlimit $r = { num, num }; \
-		setrlimit(RLIMIT_NOFILE, &$r);\
+#define SET_RLIMIT_NOFILE(num)				\
+	do {									\
+		struct rlimit $r = { num, num };	\
+		setrlimit(RLIMIT_NOFILE, &$r);		\
 	} while(0)
 
 typedef int socket_t;
@@ -60,19 +51,37 @@ typedef int socket_t;
 #define FD_SETSIZE				(1024)
 #include <ws2tcpip.h>
 
-#define IGNORE_SIGNAL(sig)
 #define SET_RLIMIT_NOFILE(num)	
 
-#define socket_errno			WSAGetLastError()
-#define SOCKET_EINTR			WSAEINTR
-#define SOCKET_EAGAIN			WSAEWOULDBLOCK
-#define SOCKET_EINVAL			WSAEINVAL
-#define SOCKET_EWOULDBOCK		WSAEWOULDBLOCK
-#define SOCKET_EINPROGRESS		WSAEINPROGRESS
-#define SOCKET_EMFILE			WSAEMFILE
-#define SOCKET_ENFILE			WSAETOOMANYREFS
+#undef	errno
+#define	errno					WSAGetLastError()
+#undef	strerror
+#define strerror				(char *)strerr
 
-#define SOCKET_CONNECTED		WSAEWOULDBLOCK
+#undef  EINTR
+#define EINTR					WSAEINTR
+#undef	EAGAIN
+#define EAGAIN					WSAEWOULDBLOCK
+#undef	EINVAL
+#define EINVAL					WSAEINVAL
+#undef	EWOULDBOCK
+#define EWOULDBOCK				WSAEINPROGRESS
+#undef	EINPROGRESS
+#define EINPROGRESS				WSAEINPROGRESS
+#undef	EMFILE
+#define EMFILE					WSAEMFILE
+#undef	ENFILE
+#define ENFILE					WSAETOOMANYREFS
+
+// connect链接还在进行中, linux显示 EINPROGRESS，winds是 WSAEWOULDBLOCK
+#define ECONNECTED				WSAEWOULDBLOCK
+
+/*
+ * WinSock 2 extension -- manifest constants for shutdown()
+ */
+#define SHUT_RD					SD_RECEIVE
+#define SHUT_WR					SD_SEND
+#define SHUT_RDWR				SD_BOTH
 
 typedef int socklen_t;
 typedef SOCKET socket_t;
@@ -85,46 +94,26 @@ typedef SOCKET socket_t;
 //
 extern int gettimeofday(struct timeval * tv, void * tz);
 
+//
+// strerr - linux 上面替代 strerror, winds 替代 FormatMessage 
+// error	: linux 是 errno, winds 可以是 WSAGetLastError() ... 
+// return	: system os 拔下来的提示字符串常量
+//
+extern const char * strerr(int error);
+
 #else
 #	error "error : Currently only supports the Best New CL and GCC!"
 #endif
 
-#undef	CERR
-extern const char * sh_strerr(int error);
-#define CERR(fmt, ...) \
-	fprintf(stderr, "[%s:%s:%d][errno %d:%s]" fmt "\n", __FILE__, __func__, __LINE__, socket_errno, sh_strerr(socket_errno), ##__VA_ARGS__)
-
 // EAGAIN and EWOULDBLOCK may be not the same value.
-#if (SOCKET_EAGAIN != SOCKET_EWOULDBOCK)
-#define SOCKET_WAGAIN SOCKET_EAGAIN : case SOCKET_EWOULDBOCK
+#if (EAGAIN != EWOULDBOCK)
+#define EAGAIN_WOULDBOCK EAGAIN : case EWOULDBOCK
 #else
-#define SOCKET_WAGAIN SOCKET_EAGAIN
+#define EAGAIN_WOULDBOCK EAGAIN
 #endif
-
-//
-// IGNORE_SIGPIPE - 管道破裂,忽略SIGPIPE信号
-//
-#define IGNORE_SIGPIPE()		IGNORE_SIGNAL(SIGPIPE)
 
 // 目前通用的tcp udp v4地址
 typedef struct sockaddr_in sockaddr_t;
-
-//
-// MAKE_TIMEVAL - 毫秒数转成 timeval 变量
-// tv		: struct timeval 变量
-// msec		: 毫秒数
-//
-#define MAKE_TIMEVAL(tv, msec) \
-	do {\
-		if((msec) > 0) {\
-			(tv).tv_sec = (msec) / 1000;\
-			(tv).tv_usec = ((msec) % 1000) * 1000;\
-		}\
-		else {\
-			(tv).tv_sec = 0;\
-			(tv).tv_usec = 0;\
-		}\
-	} while(0)
 
 //
 // socket_start	- 单例启动socket库的初始化方法

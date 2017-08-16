@@ -53,7 +53,7 @@ static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 
 	do
 		n = epoll_wait(mdata->efd, mdata->evs, mdata->ets, timeout);
-	while (n < SufBase && socket_errno == SOCKET_EINTR);
+	while (n < SufBase && errno == EINTR);
 
 	// 得到当前时间
 	time(&base->curt);

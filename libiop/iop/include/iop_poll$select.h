@@ -25,10 +25,13 @@ static inline void _selects_free(iopbase_t base) {
 static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	iop_t iop;
 	uint32_t revents;
-	struct timeval tv;
 	int n, num, curid, nextid;
+	struct timeval tv = { 0 };
 	selects_t mdata = base->mdata;
-	MAKE_TIMEVAL(tv, timeout);
+	if (timeout > 0) {
+		tv.tv_sec = timeout / 1000;
+		tv.tv_usec = (timeout % 1000) * 1000;
+	}
 
 	// 开始复制变化
 	memcpy(&mdata->orset, &mdata->rset, sizeof(fd_set));
@@ -38,7 +41,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 #ifdef _MSC_VER
 	// window select only listen socket 
 	n = select(0, &mdata->orset, &mdata->owset, NULL, &tv);
-	if (n < 0 && socket_errno == SOCKET_EAGAIN) {
+	if (n < 0 && errno == EAGAIN) {
 		// 当定时器时候等待
 		n = 0;
 		Sleep(tv.tv_sec * 1000 + tv.tv_usec / 1000);
@@ -47,7 +50,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	do {
 		// 时间tv会改变, 时间总的而言不变化
 		n = select(mdata->maxfd + 1, &mdata->orset, &mdata->owset, NULL, &tv);
-	} while (n < SufBase && socket_errno == SOCKET_EINTR);
+	} while (n < SufBase && errno == SOCKET_EINTR);
 #endif
 	time(&base->curt);
 	if (n <= 0)

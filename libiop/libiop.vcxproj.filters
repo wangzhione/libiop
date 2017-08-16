@@ -27,9 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="iop\include\iop_util.h">
-      <Filter>iop\include</Filter>
-    </ClInclude>
     <ClInclude Include="iop\include\iop_def.h">
       <Filter>iop\include</Filter>
     </ClInclude>
@@ -66,13 +63,13 @@
     <ClInclude Include="pthread\include\semaphore.h">
       <Filter>pthread\include</Filter>
     </ClInclude>
+    <ClInclude Include="helper\include\scsocket.h">
+      <Filter>helper\inlcude</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
       <Filter>main</Filter>
-    </ClCompile>
-    <ClCompile Include="iop\iop_util.c">
-      <Filter>iop</Filter>
     </ClCompile>
     <ClCompile Include="iop\iop_server.c">
       <Filter>iop</Filter>
@@ -89,7 +86,10 @@
     <ClCompile Include="helper\vlist.c">
       <Filter>helper</Filter>
     </ClCompile>
-    <ClCompile Include="helper\sh_strerr.c">
+    <ClCompile Include="helper\scsocket.c">
+      <Filter>helper</Filter>
+    </ClCompile>
+    <ClCompile Include="helper\strerr.c">
       <Filter>helper</Filter>
     </ClCompile>
   </ItemGroup>

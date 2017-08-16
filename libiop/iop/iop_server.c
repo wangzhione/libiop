@@ -56,7 +56,7 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 
 		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
 		if (n < SufBase) {
-			if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
+			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
 				r = sarg->ferror(base, id, EV_WRITE, arg);
 				if (r < SufBase)
 					return r;

@@ -3,7 +3,7 @@
 
 #include <tstr.h>
 #include <vlist.h>
-#include <iop_util.h>
+#include <scsocket.h>
 
 //
 // EV_XXX 是特定消息处理动作的标识

@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-extern inline const char * sh_strerr(int error) {
+extern inline const char * strerr(int error) {
 	return strerror(error);
 }
 
@@ -15,7 +15,7 @@ extern inline const char * sh_strerr(int error) {
 
 #define DWORD int
 
-extern const char * sh_strerr(int error) {
+extern const char * strerr(int error) {
 	switch (error) {
     case ERROR_SUCCESS                                                          : return "The operation completed successfully";
     case ERROR_INVALID_FUNCTION                                                 : return "Incorrect function";
@@ -6223,7 +6223,7 @@ extern const char * sh_strerr(int error) {
     case UTC_E_ESCALATION_DIRECTORY_ALREADY_EXISTS                              : return "The escalation working directory for the requested escalation could not be created because it already exists";
 	}
 
-	fprintf(stderr, "sh_strerr invaild error = %d.\n", error);
+	fprintf(stderr, "strerr invaild error = %d.\n", error);
 	return "The aliens are coming. Go tell your favorite people";
 }
 

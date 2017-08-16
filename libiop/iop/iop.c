@@ -338,7 +338,7 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 		if (r >= 0 && (uint32_t)r >= len)
 			return SufBase;
 		if (r < 0) {
-			if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
+			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
 				RETURN(ErrBase, "socket_send error r = %d.", r);
 			}
 			r = 0;
@@ -375,7 +375,7 @@ iop_recv(iopbase_t base, uint32_t id) {
 	// 开始接收数据
 	r = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);
 	if (r < 0) {
-		if (socket_errno != SOCKET_EINPROGRESS && socket_errno != SOCKET_EWOULDBOCK) {
+		if (errno != EINPROGRESS && errno != EWOULDBOCK) {
 			RETURN(ErrBase, "socket_read error r = %d.", r);
 		}
 		return r;
