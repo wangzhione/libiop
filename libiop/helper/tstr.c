@@ -3,7 +3,7 @@
 //-----------------------------------字符串相关的协助API -------------------------------
 
 //
-// 采用jshash算法,计算字符串返回后的hash值,碰撞率为80%
+// Brian Kernighan与 Dennis Ritchie 简便快捷的 hash算法
 // str		: 字符串内容
 // return	: 返回计算后的hash值
 //
@@ -55,7 +55,7 @@ tstr_dup(const char * str) {
 	len = strlen(str) + 1;
 	nstr = malloc(sizeof(char) * len);
 	//
-	// 补充一下, 关于malloc的写法, 说不尽道不完. 
+	// 补充一下, 关于 malloc的写法, 说不尽道不完. 
 	// 这里采用 日志 + exit, 这种未定义行为. 方便收集错误日志和监测大内存申请失败情况.
 	//
 	if (NULL == nstr)
@@ -287,7 +287,7 @@ tstr_dupstr(tstr_t tstr) {
 // tstr		: tstr_t 串
 // return	: 返回构建好的c的串, 内存地址tstr->str
 //
-char * 
+inline char * 
 tstr_cstr(tstr_t tstr) {
 	// 本质是检查最后一个字符是否为 '\0'
 	if (tstr->len < 1 || tstr->str[tstr->len - 1]) {

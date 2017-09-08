@@ -11,7 +11,7 @@ typedef struct selects {
 	fd_set wset;
 	fd_set orset;
 	fd_set owset;
-} *selects_t;
+} * selects_t;
 
 // 开始销毁函数
 static inline void _selects_free(iopbase_t base) {

@@ -4,10 +4,10 @@
 #include <sys/epoll.h>
 
 typedef struct epolls {
-	int efd;					// epoll 文件描述符与
-	uint32_t ets;				// epoll 数组的个数
-	struct epoll_event evs[];	// 事件数组
-} *epolls_t;
+	int efd;                    // epoll 文件描述符与
+	uint32_t ets;               // epoll 数组的个数
+	struct epoll_event evs[];   // 事件数组
+} * epolls_t;
 
 // 发送事件转换
 static inline uint32_t _to_events(uint32_t what) {

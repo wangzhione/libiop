@@ -51,9 +51,9 @@
 // 
 #define NIL
 #define RETURN(val, fmt, ...) \
-	do {\
-		CERR(fmt, ##__VA_ARGS__);\
-		return val;\
+	do { \
+		CERR(fmt, ##__VA_ARGS__); \
+		return val; \
 	} while(0)
 
 
@@ -89,7 +89,7 @@ enum flag {
 	ErrFd       = -4,  //文件打开失败
 	ErrAlloc    = -3,  //内存分配错误
 	ErrParam    = -2,  //输入参数错误
-	ErrBase	    = -1,  //错误基础类型, 所有位置错误都可用它
+	ErrBase     = -1,  //错误基础类型, 所有位置错误都可用它
 
 	SufBase     = +0,  //基础正确类型
 };

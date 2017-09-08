@@ -89,7 +89,7 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 
 	if (events & EV_READ) {
 		iop = base->iops + id;
-		s = socket_accept(iop->s, NULL, NULL);
+		s = socket_accept(iop->s, NULL);
 		if (INVALID_SOCKET == s) {
 			RETURN(ErrFd, "socket_accept is error id = %u.", id);
 		}
@@ -110,16 +110,16 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 
 //
 // iop_add_ioptcp - 添加tcp服务
-// base			: iop对象集
-// host			: 服务器ip
-// port			: 服务器端口
-// timeout		: 超时时间阀值,单位秒
-// fparser		: 协议解析器
-// fprocessor	: 数据处理器
-// fconnect		: 当连接创建时候回调
-// fdestroy		: 退出时间的回调
-// ferror		: 错误的时候回调
-// return		: 成功返回>=0的id, 失败返回 -1 ErrBase
+// base         : iop对象集
+// host         : 服务器ip
+// port         : 服务器端口
+// timeout      : 超时时间阀值
+// fparser      : 协议解析器
+// fprocessor   : 数据处理器
+// fconnect     : 当连接创建时候回调
+// fdestroy     : 退出时间的回调
+// ferror       : 错误的时候回调
+// return       : 成功返回>=0的id, 失败返回 -1 ErrBase
 //
 int iop_add_ioptcp(iopbase_t base,
 	const char * host, uint16_t port, uint32_t timeout,

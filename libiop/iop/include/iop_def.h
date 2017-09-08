@@ -8,31 +8,31 @@
 //
 // EV_XXX 是特定消息处理动作的标识
 //
-#define EV_READ			(1 << 0)	// 读事件
-#define EV_WRITE		(1 << 1)	// 写事件
-#define EV_CREATE		(1 << 2)	// 创建事件 
-#define EV_DELETE		(1 << 3)	// 销毁事件
-#define EV_TIMEOUT		(1 << 4)	// 超时事件
-#define EV_ERROR		(1 << 5)	// 错误事件
-#define EV_CONNECT		(1 << 6)	// 链接事件
+#define EV_READ         (1 << 0)    // 读事件
+#define EV_WRITE        (1 << 1)    // 写事件
+#define EV_CREATE       (1 << 2)    // 创建事件 
+#define EV_DELETE       (1 << 3)    // 销毁事件
+#define EV_TIMEOUT      (1 << 4)    // 超时事件
+#define EV_ERROR        (1 << 5)    // 错误事件
+#define EV_CONNECT      (1 << 6)    // 链接事件
 
 //
 // IOP_XXX 是处理内部事件
 //
-#define IOP_FREE		(0)			// 释放操作
-#define IOP_IO			(1)			// IO操作
-#define IOP_TIMEOUT		(2)			// 超时操作
+#define IOP_FREE        (0)         // 释放操作
+#define IOP_IO          (1)         // IO操作
+#define IOP_TIMEOUT     (2)         // 超时操作
 
 //
 // _INT_XXX 系统运行中用到的参数
 //
-#define _INT_DISPATCH	(500)		// 事件调度的时间间隔 毫秒
-#define _INT_MAXBUF		(1 << 25)	// socket data buf 最大32M	
-#define _INT_POLL		(1 << 13)	// events limit
-#define _INT_HOST		(64)		// 主机字符保存
-#define _INT_KEEPALIVE	(60)		// 心跳包检查 秒
-#define _INT_STACK		(1 << 23)	// 8M大小
-#define _INT_RECV		(1 << 12)	// 4k 接收缓冲区
+#define _INT_DISPATCH   (500)       // 事件调度的时间间隔 毫秒
+#define _INT_MAXBUF     (1 << 25)   // socket data buf 最大32M	
+#define _INT_POLL       (1 << 13)   // events limit
+#define _INT_HOST       (64)        // 主机字符保存
+#define _INT_KEEPALIVE  (60)        // 心跳包检查 秒
+#define _INT_STACK      (1 << 23)   // 8M大小
+#define _INT_RECV       (1 << 12)   // 4k 接收缓冲区
 
 typedef struct iop * iop_t;
 typedef struct iopop * iopop_t;
@@ -83,28 +83,28 @@ typedef void (* iop_f)(iopbase_t base, uint32_t id, void * arg);
 // iop结构, 每一个iop对象都会对应一个iop结构
 //
 struct iop {
-	uint32_t id;			// 对应的id
-	socket_t s;				// 对应的socket
-	uint8_t type;			// 对象类型 IOP_XXX 0:free, 1:io, 2:timer
-	int prev;				// 上一个对象
-	int next;				// 下一个对象
-	uint32_t events;		// 关注的事件
-	uint32_t timeout;		// 超时值
-	iop_event_f fevent;		// 事件毁掉函数
-	void * arg;				// 用户指定参数, 由用户负责释放资源
-	void * sarg;			// 系统指定参数, 由系统自动释放资源
+	uint32_t id;            // 对应的id
+	socket_t s;             // 对应的socket
+	uint8_t type;           // 对象类型 IOP_XXX 0:free, 1:io, 2:timer
+	int prev;               // 上一个对象
+	int next;               // 下一个对象
+	uint32_t events;        // 关注的事件
+	uint32_t timeout;       // 超时值
+	iop_event_f fevent;     // 事件毁掉函数
+	void * arg;             // 用户指定参数, 由用户负责释放资源
+	void * sarg;            // 系统指定参数, 由系统自动释放资源
 
-	struct tstr sbuf[1];	// 发送缓冲区, 希望保存在栈上
-	struct tstr rbuf[1];	// 接收缓冲区
-	time_t lastt;			// 最后一次调度时间
+	struct tstr sbuf[1];    // 发送缓冲区, 希望保存在栈上
+	struct tstr rbuf[1];    // 接收缓冲区
+	time_t lastt;           // 最后一次调度时间
 };
 
 struct iopop {
-	void(*ffree)(iopbase_t);								// 资源释放接口
-	int(*fdispatch)(iopbase_t, uint32_t);					// 模型调度接口
-	int(*fadd)(iopbase_t, uint32_t, socket_t, uint32_t);	// 添加事件接口
-	int(*fdel)(iopbase_t, uint32_t, socket_t);			// 删除事件接口
-	int(*fmod)(iopbase_t, uint32_t, socket_t, uint32_t);	// 修改事件接口
+	void (* ffree)(iopbase_t);                              // 资源释放接口
+	int  (* fdispatch)(iopbase_t, uint32_t);                // 模型调度接口
+	int  (* fadd)(iopbase_t, uint32_t, socket_t, uint32_t); // 添加事件接口
+	int  (* fdel)(iopbase_t, uint32_t, socket_t);           // 删除事件接口
+	int  (* fmod)(iopbase_t, uint32_t, socket_t, uint32_t); // 修改事件接口
 };
 
 typedef struct ilist {
@@ -113,23 +113,23 @@ typedef struct ilist {
 } *ilist_t;
 
 struct iopbase {
-	iop_t iops;				// 所有的iop对象
-	uint32_t maxio;			// 最大并发io数
-	uint32_t maxbuf;		// 单个发送或接收缓存的最大值
-	uint32_t freehead;		// 可用iop列表头
-	uint32_t freetail;		// 可用iop列表尾,最后一个
-	uint32_t iohead;		// 已用io类型的iop列表
-	volatile bool flag;		// 异步退出表示 true表示退出
+	iop_t iops;             // 所有的iop对象
+	uint32_t maxio;         // 最大并发io数
+	uint32_t maxbuf;        // 单个发送或接收缓存的最大值
+	uint32_t freehead;      // 可用iop列表头
+	uint32_t freetail;      // 可用iop列表尾,最后一个
+	uint32_t iohead;        // 已用io类型的iop列表
+	volatile bool flag;     // 异步退出表示 true表示退出
 
-	int dispatchval;		// 调度的事件间隔
-	struct iopop op;		// 事件模型的内部实现
-	void * mdata;			// 事件模型特定数据
+	int dispatchval;        // 调度的事件间隔
+	struct iopop op;        // 事件模型的内部实现
+	void * mdata;           // 事件模型特定数据
 
-	time_t curt;			// 当前调度时间
-	time_t lastt;			// 上次调度时间
-	time_t lastkeepalivet;	// 最后一次心跳的时间
+	time_t curt;            // 当前调度时间
+	time_t lastt;           // 上次调度时间
+	time_t lastkeepalivet;  // 最后一次心跳的时间
 
-	vlist_t tplist;			// use for advance tcp server model.
+	vlist_t tplist;         // use for advance tcp server model.
 };
 
 //
@@ -148,14 +148,14 @@ extern int iop_del(iopbase_t base, uint32_t id);
 // events	: 事件合集
 //
 #define IOP_CB(base, iop, events) \
-	do {\
-		if(iop->type != IOP_FREE) {\
-			int $type = iop->fevent(base, iop->id, events, iop->arg);\
-			if ($type >= SufBase)\
-				iop->lastt = base->curt;\
-			else\
-				iop_del(base, iop->id);\
-		}\
+	do { \
+		if(iop->type != IOP_FREE) { \
+			int $type = iop->fevent(base, iop->id, events, iop->arg); \
+			if ($type >= SufBase) \
+				iop->lastt = base->curt; \
+			else \
+				iop_del(base, iop->id); \
+		} \
 	} while(0)
 
 #endif // !_H_SIMPLEC_IOP_DEF

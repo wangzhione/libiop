@@ -17,16 +17,16 @@ typedef struct ioptcp {
 
 //
 // iop_add_ioptcp - 添加tcp服务
-// base			: iop对象集
-// host			: 服务器ip
-// port			: 服务器端口
-// timeout		: 超时时间阀值
-// fparser		: 协议解析器
-// fprocessor	: 数据处理器
-// fconnect		: 当连接创建时候回调
-// fdestroy		: 退出时间的回调
-// ferror		: 错误的时候回调
-// return		: 成功返回>=0的id, 失败返回 -1 ErrBase
+// base         : iop对象集
+// host         : 服务器ip
+// port         : 服务器端口
+// timeout      : 超时时间阀值
+// fparser      : 协议解析器
+// fprocessor   : 数据处理器
+// fconnect     : 当连接创建时候回调
+// fdestroy     : 退出时间的回调
+// ferror       : 错误的时候回调
+// return       : 成功返回>=0的id, 失败返回 -1 ErrBase
 //
 extern int iop_add_ioptcp(iopbase_t base,
 	const char * host, uint16_t port, uint32_t timeout,

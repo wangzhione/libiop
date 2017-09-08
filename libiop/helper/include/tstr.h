@@ -6,9 +6,9 @@
 #ifndef _STRUCT_TSTR
 
 struct tstr {
-	char * str;			// 字符串实际保存的内容
-	size_t len;			// 当前字符串长度
-	size_t cap;			// 字符池大小
+    char * str;     // 字符串实际保存的内容
+    size_t len;     // 当前字符串长度
+    size_t cap;     // 字符池大小
 };
 
 // 定义的字符串类型
@@ -26,7 +26,7 @@ typedef struct tstr * tstr_t;
 //-----------------------------------字符串相关的协助API -------------------------------
 
 //
-// tstr_hash - 简易高效的hash函数, 碰撞概率 <= 4 / 5
+// Brian Kernighan与 Dennis Ritchie 简便快捷的 hash算法
 // str		: 字符串内容
 // return	: 返回计算后的hash值
 //
