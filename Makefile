@@ -35,17 +35,17 @@ endef
 #
 # 具体产生具体东西了
 #
-.PHONY:all clean cleanall
+.PHONY : all clean
 
-all:main.exe
+all : main.exe
 
 #
 # *.o 映射到 $(TAR_PATH)/$(BUILD_DIR)/*.o
 #
-main.exe:main.o tstr.o vlist.o scsocket.o iop_poll.o iop.o iop_server.o strerr.o
+main.exe : main.o tstr.o vlist.o scsocket.o iop_poll.o iop.o iop_server.o strerr.o
 	$(RUN)
 
-main.o:$(SRC_PATH)/main.c | $(TAR_PATH)
+main.o : $(SRC_PATH)/main.c | $(TAR_PATH)
 	$(RUNO)
 
 #
@@ -64,11 +64,8 @@ $(foreach v, $(SRC_CS), $(eval $(call CALL_RUNO, $(v))))
 #
 # 辅助操作, 构建目录, 清除操作
 #
-$(TAR_PATH):
+$(TAR_PATH) :
 	-mkdir -p $@/$(OBJ_DIR)
 
-clean:
-	-rm -rf $(TAR_PATH)/$(OBJ_DIR)/*
-
-cleanall:
+clean :
 	-rm -rf $(TAR_PATH)

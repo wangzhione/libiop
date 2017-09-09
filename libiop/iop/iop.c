@@ -2,7 +2,7 @@
 #include <iop_poll.h>
 
 // 默认event 调度事件
-static inline int _iop_default_event(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+static inline int _iop_devent(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
 	return SufBase;
 }
 
@@ -25,7 +25,7 @@ static iopbase_t _iopbase_new(uint32_t maxio) {
 	base->dispatchval = _INT_DISPATCH;
 	base->lastt = time(&base->curt);
 	base->lastkeepalivet = base->curt;
-	base->iohead = INVALID_SOCKET;
+	base->iohead = -1;
 	base->freetail = maxio - 1;
 
 	// 构建具体的处理
@@ -33,7 +33,7 @@ static iopbase_t _iopbase_new(uint32_t maxio) {
 		iop_t iop = base->iops + i;
 		iop->id = i;
 		iop->s = INVALID_SOCKET;
-		iop->fevent = _iop_default_event;
+		iop->fevent = _iop_devent;
 
 		iop->prev = prev;
 		prev = i;
@@ -53,9 +53,9 @@ inline iopbase_t
 iop_create(void) {
 	iopbase_t base = _iopbase_new(_INT_POLL);
 	if (base) {
-		if (SufBase > iop_init_pool(base, _INT_POLL)) {
+		if (SufBase > iop_poll_init(base, _INT_POLL)) {
 			iop_delete(base);
-			RETURN(NULL, "iop_init_pool _INT_POLL = %d error!", _INT_POLL);
+			RETURN(NULL, "iop_poll_init _INT_POLL = %d error!", _INT_POLL);
 		}
 	}
 	return base;
@@ -69,7 +69,8 @@ iop_create(void) {
 void
 iop_delete(iopbase_t base) {
 	uint32_t i;
-	if (!base) return;
+	if (!base || base->flag) 
+        return;
 
 	base->flag = true;
 	if (base->iops) {
@@ -101,8 +102,7 @@ iop_delete(iopbase_t base) {
 // base		: io调度对象
 // return	: 本次调度处理事件总数
 //
-int
-iop_dispatch(iopbase_t base) {
+int iop_dispatch(iopbase_t base) {
 	iop_t iop;
 	int curid, nextid, r;
 
@@ -133,75 +133,49 @@ iop_dispatch(iopbase_t base) {
 	return r;
 }
 
+static void _iop_run(iopbase_t base) {
+    while (!base->flag)
+        iop_dispatch(base);
+    iop_delete(base);
+}
+
 //
 // iop_run - 启动循环事件调度,直到退出
 // base		: io事件集基础对象
-// return	: void
-//
-void
-iop_run(iopbase_t base) {
-	while (!base->flag) {
-		iop_dispatch(base);
-	}
-	iop_delete(base);
-}
-
-static inline void * _run_thread(void * arg) {
-	iop_run(arg);
-	return arg;
-}
-
-//
-// iop_run_pthread - 开启一个线程来跑这个轮询事件
-// base		: iop 操作类型
-// tid		: 返回的线程id指针
 // return	: >=SufBase 表示成功, 否则失败
-//
 int
-iop_run_pthread(iopbase_t base, pthread_t * tid) {
-	int r;
-	pthread_attr_t attr;
+iop_run(iopbase_t base) {
+    int r;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, _INT_STACK);
 
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, _INT_STACK);
+    // 线程启动起来
+    r = pthread_create(&base->tid, &attr, (start_f)_iop_run, base);
+    if (r < SufBase) {
+        iop_delete(base);
+        RETURN(r, "pthread_create _iop_run is error r = %d!", r);
+    }
 
-	// 线程启动起来
-	r = pthread_create(tid, &attr, _run_thread, base);
-	if (r < SufBase) {
-		iop_delete(base);
-		RETURN(r, "pthread_create _run_thread is error r = %d!", r);
-	}
-
-	pthread_attr_destroy(&attr);
-	return r;
+    pthread_attr_destroy(&attr);
+    return r;
 }
 
 //
-// iop_end_pthread - 结束一个线程的iop调度
-// base		: iop 操作类型
-// tid		: 线程操作的类型
-// return	: void
-//
-void
-iop_end_pthread(iopbase_t base, pthread_t * tid) {
-	if (!base || !tid)
-		RETURN(NIL, "check param is erro base = %p, tid = %p.", base, tid);
-
-	base->flag = true;
-	pthread_join(*tid, NULL);
-}
-
-//
-// iop_stop - 退出循环事件调度
+// iop_end - 退出循环事件调度
 // base		: io事件集基础对象
 // return	: void
 //
-inline void
-iop_stop(iopbase_t base) {
-	base->flag = true;
+void 
+iop_end(iopbase_t base) {
+    if (base && !base->flag) {
+        base->flag = true;
+        pthread_join(base->tid, NULL);
+    }
 }
 
-static iop_t _iop_get_freehead(iopbase_t base) {
+
+static iop_t _iop_get(iopbase_t base) {
 	iop_t iop;
 	if (base->freehead == INVALID_SOCKET)
 		return NULL;
@@ -230,9 +204,9 @@ static iop_t _iop_get_freehead(iopbase_t base) {
 uint32_t
 iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, void * arg) {
 	int r = 0;
-	iop_t iop = _iop_get_freehead(base);
+	iop_t iop = _iop_get(base);
 	if (NULL == iop) {
-		RETURN(ErrBase, "_iop_get_freehead is base error = %p.", base);
+		RETURN(ErrBase, "_iop_get is base error = %p.", base);
 	}
 
 	iop->s = s;
@@ -293,9 +267,7 @@ iop_del(iopbase_t base, uint32_t id) {
 		base->freetail = iop->id;
 		if (base->freetail == INVALID_SOCKET)
 			base->freehead = iop->id;
-
 		break;
-
 	default:
 		CERR("iop->type = %u is error!", iop->type);
 	}

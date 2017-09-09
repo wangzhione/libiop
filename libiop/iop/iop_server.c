@@ -1,9 +1,18 @@
 ﻿#include <iop_server.h>
 
-static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+struct iopserver {
+    uint32_t timeout;
+    iop_parse_f fparser;
+    iop_processor_f fprocessor;
+    iop_f fconnect;
+    iop_f fdestroy;
+    iop_event_f ferror;
+};
+
+static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
 	int r, n;
 	iop_t iop = base->iops + id;
-	ioptcp_t sarg = iop->sarg;
+    struct iopserver * sarg = iop->sarg;
 
 	// 销毁事件
 	if (events & EV_DELETE) {
@@ -56,6 +65,7 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 
 		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
 		if (n < SufBase) {
+            // EINPROGRESS : 进程正在处理; EWOULDBOCK : 当前缓冲区已经写满可以继续写
 			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
 				r = sarg->ferror(base, id, EV_WRITE, arg);
 				if (r < SufBase)
@@ -65,7 +75,7 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 		}
 		if (n == SufBase) return SufBase;
 
-		if ((uint32_t)n >= iop->sbuf->len)
+		if (n >= (int)iop->sbuf->len)
 			iop->sbuf->len = 0;
 		else
 			tstr_popup(iop->sbuf, n);
@@ -81,11 +91,10 @@ static int _iop_tcp_fdispatch(iopbase_t base, uint32_t id, uint32_t events, void
 	return SufBase;
 }
 
-static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iopserver * sarg) {
 	int r;
 	iop_t iop;
 	socket_t s;
-	ioptcp_t sarg = arg;
 
 	if (events & EV_READ) {
 		iop = base->iops + id;
@@ -94,23 +103,50 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 			RETURN(ErrFd, "socket_accept is error id = %u.", id);
 		}
 
-		r = iop_add(base, s, EV_READ, sarg->timeout, _iop_tcp_fdispatch, NULL);
+		r = iop_add(base, s, EV_READ, sarg->timeout, _fdispatch, NULL);
 		if (r < SufBase) {
 			socket_close(r);
 			RETURN(r, "iop_add EV_READ timeout = %d, r = %u", sarg->timeout, r);
 		}
 
 		iop = base->iops + r;
-		iop->sarg = arg;
-		sarg->fconnect(base, r, NULL);
+		iop->sarg = sarg;
+		sarg->fconnect(base, r, iop->arg);
 	}
 
 	return SufBase;
 }
 
+// struct iopserver 对象创建
+static int _iopserver_create(iopbase_t base,
+    const char * host, uint16_t port, uint32_t timeout,
+    iop_parse_f fparser, iop_processor_f fprocessor,
+    iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
+    struct iopserver * sarg;
+	// 构建 socket tcp 服务
+	socket_t s = socket_tcp(host, port);
+	if (s == INVALID_SOCKET) {
+		RETURN(ErrBase, "socket_tcp err = %s | %u.", host, port);
+	}
+
+	// 构建系统参数, 并逐个填充内容
+	if ((sarg = malloc(sizeof(struct iopserver))) == NULL) {
+		socket_close(s);
+		RETURN(ErrAlloc, "calloc struct ioptcp is error!");
+	}
+	sarg->timeout = timeout;
+    sarg->fparser = fparser;
+    sarg->fprocessor = fprocessor;
+	sarg->fconnect = fconnect;
+	sarg->fdestroy = fdestroy;
+	sarg->ferror = ferror;
+	base->tplist = vlist_add(base->tplist, sarg);
+    // 添加主 iop 对象, 永不超时
+	return iop_add(base, s, EV_READ, -1, (iop_event_f)_fconnect, sarg);
+}
+
 //
-// iop_add_ioptcp - 添加tcp服务
-// base         : iop对象集
+// iop_server - 启动一个 iop tcp server, 开始监听处理
 // host         : 服务器ip
 // port         : 服务器端口
 // timeout      : 超时时间阀值
@@ -119,40 +155,29 @@ static int _iop_add_connect(iopbase_t base, uint32_t id, uint32_t events, void *
 // fconnect     : 当连接创建时候回调
 // fdestroy     : 退出时间的回调
 // ferror       : 错误的时候回调
-// return       : 成功返回>=0的id, 失败返回 -1 ErrBase
+// return       : 返回 iop 对象, 结束时候可以调用 iop_end
 //
-int iop_add_ioptcp(iopbase_t base,
-	const char * host, uint16_t port, uint32_t timeout,
-	iop_parse_f fparser, iop_processor_f fprocessor,
-	iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
-	socket_t s;
-	ioptcp_t sarg;
+iopbase_t 
+iop_server(const char * host, uint16_t port, uint32_t timeout,
+    iop_parse_f fparser, iop_processor_f fprocessor,
+    iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
+    int r;
+    iopbase_t base = iop_create();
+    if (NULL == base)
+        CERR_EXIT("iop_create is error!");
+    
+    r = _iopserver_create(base, host, port, timeout, 
+        fparser, fprocessor, fconnect, fdestroy, ferror);
+    if (r < SufBase) {
+        iop_delete(base);
+        CERR_EXIT("_iopserver_create base error r = %p, %d.", base, r);
+    }
+    
+    r = iop_run(base);
+    if (r < SufBase) {
+        iop_delete(base);
+        CERR_EXIT("iop_run base error r = %p, %d.", base, r);
+    }
 
-	// 构建socket tcp 服务
-	s = socket_tcp(host, port);
-	if (s == INVALID_SOCKET) {
-		RETURN(ErrBase, "socket_tcp error host, post = %s | %u.", host, port);
-	}
-
-	// 构建系统参数
-	sarg = calloc(1, sizeof(struct ioptcp));
-	if (NULL == sarg) {
-		socket_close(s);
-		RETURN(ErrAlloc, "calloc struct ioptcp is error!");
-	}
-
-	// 开始复制内容
-	strncpy(sarg->host, host, _INT_HOST - 1);
-	sarg->host[_INT_HOST - 1] = '\0';
-
-	sarg->port = port;
-	sarg->timeout = timeout;
-	sarg->fconnect = fconnect;
-	sarg->fdestroy = fdestroy;
-	sarg->ferror = ferror;
-	sarg->fparser = fparser;
-	sarg->fprocessor = fprocessor;
-	base->tplist = vlist_add(base->tplist, sarg);
-
-	return iop_add(base, s, EV_READ, INVALID_SOCKET, _iop_add_connect, sarg);
+    return base;
 }

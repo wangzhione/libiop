@@ -140,13 +140,13 @@ static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 }
 
 //
-// iop_init_pool - 通信的底层接口
+// iop_poll_init - 通信的底层接口
 // base		: 总的iop对象管理器
 // maxsz	: 开启的最大处理数
 // return	: SufBase 表示成功
 //
 int
-iop_init_pool(iopbase_t base, unsigned maxsz) {
+iop_poll_init(iopbase_t base, unsigned maxsz) {
 	iopop_t op;
 	selects_t mdata = calloc(1, sizeof(struct selects));
 	if (NULL == mdata) {

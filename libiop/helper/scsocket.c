@@ -355,7 +355,7 @@ socket_udp(const char * host, uint16_t port) {
 
 inline socket_t
 socket_accept(socket_t s, sockaddr_t * addr) {
-    socklen_t len;
+    socklen_t len = sizeof (sockaddr_t);
     return accept(s, (struct sockaddr *)addr, &len);
 }
 

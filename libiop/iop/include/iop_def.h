@@ -3,6 +3,7 @@
 
 #include <tstr.h>
 #include <vlist.h>
+#include <pthread.h>
 #include <scsocket.h>
 
 //
@@ -107,11 +108,6 @@ struct iopop {
 	int  (* fmod)(iopbase_t, uint32_t, socket_t, uint32_t); // 修改事件接口
 };
 
-typedef struct ilist {
-	struct ilist * next;
-	void * data;
-} *ilist_t;
-
 struct iopbase {
 	iop_t iops;             // 所有的iop对象
 	uint32_t maxio;         // 最大并发io数
@@ -130,16 +126,9 @@ struct iopbase {
 	time_t lastkeepalivet;  // 最后一次心跳的时间
 
 	vlist_t tplist;         // use for advance tcp server model.
+
+    pthread_t tid;          // 简化理解, 每个iop对象自带一个线程
 };
-
-//
-// iop_del - 从iopbase_t中删除指定id的事件对象
-// base		: iopbase_t指针
-// id		: 事件对象id
-// return	: 成功返回SufBase, 失败返回ErrBase
-//
-extern int iop_del(iopbase_t base, uint32_t id);
-
 
 //
 // IOP_CB - iop处理帮助宏
@@ -153,8 +142,10 @@ extern int iop_del(iopbase_t base, uint32_t id);
 			int $type = iop->fevent(base, iop->id, events, iop->arg); \
 			if ($type >= SufBase) \
 				iop->lastt = base->curt; \
-			else \
+			else { \
+                extern int iop_del(iopbase_t base, uint32_t id); \
 				iop_del(base, iop->id); \
+            } \
 		} \
 	} while(0)
 

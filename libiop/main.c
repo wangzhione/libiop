@@ -1,30 +1,31 @@
 ﻿#include <iop_server.h>
 
-//
-// 测试回显服务器
-//
-void test_echo_server(void);
+#define _STR_IP         "127.0.0.1"
+#define _SHORT_PORT     (8088)
+#define _UINT_TIMEOUT   (60u)
+#define _INT_SLEEP      (5000)
 
 //
-// 会显服务器客户端
+// echo_server - 测试回显服务器
+// echo_client - 测试回显客户端
 //
-void test_echo_client(void);
+void echo_server(void);
+void echo_client(void);
 
 //
 // 简单测试 libiop 运行情况
 //
 int main(int argc, char * argv[]) {
-
 	// 启动 * 装载 socket 库
 	socket_start();
 
 	// 客户端和服务器雌雄同体
 	if (argc > 1 && !strcmp("client", argv[1])) {
-		test_echo_client();
+        echo_client();
 	}
 	else {
 		// 测试基础的服务器启动
-		test_echo_server();
+        echo_server();
 	}
 
 	return EXIT_SUCCESS;
@@ -84,26 +85,25 @@ static int _echo_error(iopbase_t base, uint32_t id, uint32_t err, void * arg) {
 	return SufBase;
 }
 
-#define _STR_IP			"127.0.0.1"
-#define _SHORT_PORT		(8088)
-#define _UINT_TIMEOUT	(60)
-
 //
 // 测试回显服务器
 //
 void 
-test_echo_server(void) {
-	int r;
-	iopbase_t base = iop_create();
-	printf("create a new iopbase_t = %p.\n", base);
-	r = iop_add_ioptcp(base, _STR_IP, _SHORT_PORT, _UINT_TIMEOUT,
-		_echo_parser, _echo_processor, _echo_connect, _echo_destroy, _echo_error);
-	if (r < SufBase)
-		CERR_EXIT("iop_add_ioptcp is error base, r = %p, %d.", base, r);
+echo_server(void) {
+    int r = -1;
+    iopbase_t base = iop_server(_STR_IP, _SHORT_PORT, _UINT_TIMEOUT,
+        _echo_parser, _echo_processor, _echo_connect, _echo_destroy, _echo_error);
 
-	printf("create a new tcp server on ip %s, port %d.", _STR_IP, _SHORT_PORT);
-	puts("start iop run loop.");
-	iop_run(base);
+    printf("create a new tcp server ip %s, port %d.\n", _STR_IP, _SHORT_PORT);
+    puts("start iop run loop.");
+
+    // 这里阻塞一会等待消息, 否则异步线程直接退出了
+    while (++r < _UINT_TIMEOUT) {
+        puts("echo server run, but my is wait you ... ");
+        sh_msleep(_INT_SLEEP);
+    }
+
+    iop_end(base);
 }
 
 #define _INT_LOOP	(10)
@@ -112,13 +112,12 @@ test_echo_server(void) {
 // 会显服务器客户端
 //
 void 
-test_echo_client(void) {
+echo_client(void) {
 	int r, i = -1;
-	char str[] = "王志 - 你好!";
+	char str[] = "Hi - 你好!";
 
-	printf("test_echo_client connect [%s:%d]...\n", _STR_IP, _SHORT_PORT);
-
-	// 连接到服务器
+    // 连接到服务器
+	printf("echo_client connect [%s:%d]...\n", _STR_IP, _SHORT_PORT);
 	socket_t s = socket_connectos(_STR_IP, _SHORT_PORT, _UINT_TIMEOUT);
 	if (s == INVALID_SOCKET) {
 		CERR_EXIT("socket_connectos error [%s:%u:%d]", _STR_IP, _SHORT_PORT, _UINT_TIMEOUT);
@@ -126,7 +125,7 @@ test_echo_client(void) {
 
 	while (++i < _INT_LOOP) {
 		// 发送一个数据接收一个数据
-		printf("socket_sendn len = %zd, str = [%s].\n", sizeof str, str);
+		printf("socket_sendn len = %zu, str = [%s].\n", sizeof str, str);
 		r = socket_sendn(s, str, sizeof str);
 		if (r == SOCKET_ERROR) {
 			socket_close(s);
@@ -137,10 +136,9 @@ test_echo_client(void) {
 			socket_close(s);
 			CERR_EXIT("socket_recvn r = %d.", r);
 		}
-		printf("socket_recvn len = %zd, str = [%s].\n", sizeof str, str);
+		printf("socket_recvn len = %zu, str = [%s].\n", sizeof str, str);
 	}
 
 	socket_close(s);
-
-	puts("test_echo_client test end...");
+	puts("echo_client test end...");
 }

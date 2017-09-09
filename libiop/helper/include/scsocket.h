@@ -23,6 +23,14 @@
 #include <sys/resource.h>
 
 //
+// sh_msleep - 睡眠函数, 时间颗粒度是毫秒.
+// m		: 待睡眠的毫秒数
+// return	: void
+//
+#define sh_msleep(m) \
+		usleep(m * 1000)
+
+//
 // This is used instead of -1, since the. by WinSock
 //
 #define INVALID_SOCKET          (~0)
@@ -48,6 +56,9 @@ typedef int socket_t;
 #undef	FD_SETSIZE
 #define FD_SETSIZE				(1024)
 #include <ws2tcpip.h>
+
+#define sh_msleep(m) \
+		Sleep(m)
 
 #define SET_RLIMIT_NOFILE(num)	
 
