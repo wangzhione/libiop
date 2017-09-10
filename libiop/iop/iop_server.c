@@ -123,7 +123,7 @@ static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops *
 	return SufBase;
 }
 
-// struct iopserver 对象创建
+// struct iops 对象创建
 static struct iops * _iops_create(
     const char * host, uint16_t port, uint32_t timeout,
     iop_parse_f fparser, iop_processor_f fprocessor,

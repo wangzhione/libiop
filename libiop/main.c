@@ -55,12 +55,12 @@ static int _echo_processor(iopbase_t base, uint32_t id, char * data, uint32_t le
 }
 
 // 连接处理
-static void _echo_connect(iopbase_t base, uint32_t id, void * arg) {
+static inline void _echo_connect(iopbase_t base, uint32_t id, void * arg) {
 	printf("_echo_connect base = %p, id : %u, arg = %p.\n", base, id, arg);
 }
 
 // 最终销毁处理
-static void _echo_destroy(iopbase_t base, uint32_t id, void * arg) {
+static inline void _echo_destroy(iopbase_t base, uint32_t id, void * arg) {
 	printf("_echo_destroy base = %p, id : %u, arg = %p.\n", base, id, arg);
 }
 
@@ -106,8 +106,6 @@ echo_server(void) {
     iops_end(base);
 }
 
-#define _INT_LOOP	(10)
-
 //
 // 会显服务器客户端
 //
@@ -123,7 +121,7 @@ echo_client(void) {
 		CERR_EXIT("socket_connectos error [%s:%u:%d]", _STR_IP, _SHORT_PORT, _UINT_TIMEOUT);
 	}
 
-	while (++i < _INT_LOOP) {
+	while (++i < 10) {
 		// 发送一个数据接收一个数据
 		printf("socket_sendn len = %zu, str = [%s].\n", sizeof str, str);
 		r = socket_sendn(s, str, sizeof str);

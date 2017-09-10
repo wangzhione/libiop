@@ -69,10 +69,7 @@ iop_create(void) {
 void
 iop_delete(iopbase_t base) {
 	uint32_t i;
-	if (!base || base->flag) 
-        return;
-
-	base->flag = true;
+	if (!base) return;
 	if (base->iops) {
 		while (base->iohead != INVALID_SOCKET)
 			iop_del(base, base->iohead);
@@ -99,7 +96,8 @@ iop_delete(iopbase_t base) {
 // base		: io调度对象
 // return	: 本次调度处理事件总数
 //
-int iop_dispatch(iopbase_t base) {
+int 
+iop_dispatch(iopbase_t base) {
 	iop_t iop;
 	int curid, nextid;
     int r = base->op.fdispatch(base, base->dispatchval);

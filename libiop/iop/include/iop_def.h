@@ -108,7 +108,6 @@ struct iopbase {
 	uint32_t freehead;      // 可用iop列表头
 	uint32_t freetail;      // 可用iop列表尾,最后一个
 	uint32_t iohead;        // 已用io类型的iop列表
-	volatile bool flag;     // 异步退出表示 true表示退出
 
 	int dispatchval;        // 调度的事件间隔
 	struct iopop op;        // 事件模型的内部实现
