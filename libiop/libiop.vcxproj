@@ -17,10 +17,10 @@
     <ClInclude Include="helper\include\vlist.h" />
     <ClInclude Include="iop\include\iop.h" />
     <ClInclude Include="iop\include\iop_def.h" />
-    <ClInclude Include="iop\include\iop_poll$epoll.h" />
-    <ClInclude Include="iop\include\iop_poll$select.h" />
     <ClInclude Include="iop\include\iop_poll.h" />
     <ClInclude Include="iop\include\iop_server.h" />
+    <ClInclude Include="iop\iop_poll$epoll.h" />
+    <ClInclude Include="iop\iop_poll$select.h" />
     <ClInclude Include="pthread\include\pthread.h" />
     <ClInclude Include="pthread\include\sched.h" />
     <ClInclude Include="pthread\include\semaphore.h" />

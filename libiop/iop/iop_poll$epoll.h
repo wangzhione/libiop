@@ -1,4 +1,4 @@
-﻿#if defined(__GNUC__) && defined(_HAVE_EPOLL)
+﻿#if defined(_HAVE_EPOLL)
 
 #include <iop_poll.h>
 #include <sys/epoll.h>
@@ -107,7 +107,7 @@ static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 int
 iop_poll_init(iopbase_t base, unsigned maxsz) {
 	epolls_t mdata;
-	iopop_t op = &base->op;
+	struct iopop * op = &base->op;
 	int epfd = epoll_create(_INT_POLL);
 	if (epfd < SufBase) {
 		RETURN(ErrBase, "epoll_create %d is error!", _INT_POLL);
@@ -130,4 +130,4 @@ iop_poll_init(iopbase_t base, unsigned maxsz) {
 	return SufBase;
 }
 
-#endif // !__GNUC__ or !_HAVE_EPOLL
+#endif//_HAVE_EPOLL

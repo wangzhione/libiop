@@ -7,6 +7,12 @@
 #include <scsocket.h>
 
 //
+// IOP_XXX 是处理内部事件
+//
+#define IOP_FREE        (0)         // 释放操作
+#define IOP_IO          (1)         // IO操作
+
+//
 // EV_XXX 是特定消息处理动作的标识
 //
 #define EV_READ         (1 << 0)    // 读事件
@@ -14,15 +20,6 @@
 #define EV_CREATE       (1 << 2)    // 创建事件 
 #define EV_DELETE       (1 << 3)    // 销毁事件
 #define EV_TIMEOUT      (1 << 4)    // 超时事件
-#define EV_ERROR        (1 << 5)    // 错误事件
-#define EV_CONNECT      (1 << 6)    // 链接事件
-
-//
-// IOP_XXX 是处理内部事件
-//
-#define IOP_FREE        (0)         // 释放操作
-#define IOP_IO          (1)         // IO操作
-#define IOP_TIMEOUT     (2)         // 超时操作
 
 //
 // _INT_XXX 系统运行中用到的参数
@@ -30,13 +27,11 @@
 #define _INT_DISPATCH   (500)       // 事件调度的时间间隔 毫秒
 #define _INT_MAXBUF     (1 << 25)   // socket data buf 最大32M	
 #define _INT_POLL       (1 << 13)   // events limit
-#define _INT_HOST       (64)        // 主机字符保存
 #define _INT_KEEPALIVE  (60)        // 心跳包检查 秒
 #define _INT_STACK      (1 << 23)   // 8M大小
 #define _INT_RECV       (1 << 12)   // 4k 接收缓冲区
 
 typedef struct iop * iop_t;
-typedef struct iopop * iopop_t;
 typedef struct iopbase * iopbase_t;
 
 //
@@ -132,8 +127,8 @@ struct iopbase {
 
 //
 // IOP_CB - iop处理帮助宏
-// base		: iopbase_t 总的iop对象的管理器
-// iop		: 当前处理的iop对象
+// base		: iopbase_t, iop 对象的管理器
+// iop		: 当前处理的 iop 对象
 // events	: 事件合集
 //
 #define IOP_CB(base, iop, events) \

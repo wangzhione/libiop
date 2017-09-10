@@ -147,14 +147,13 @@ static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 //
 int
 iop_poll_init(iopbase_t base, unsigned maxsz) {
-	iopop_t op;
+	struct iopop * op =  &base->op;
 	selects_t mdata = calloc(1, sizeof(struct selects));
 	if (NULL == mdata) {
 		RETURN(ErrAlloc, "malloc sizeof(struct selects) is error!");
 	}
 	base->mdata = mdata;
 
-	op = &base->op;
 	op->ffree = _selects_free;
 	op->fdispatch = _selects_dispatch;
 	op->fadd = _selects_add;
