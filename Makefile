@@ -5,7 +5,7 @@ SRC_PATH		?= ./libiop
 IOP_DIR			?= iop
 TAR_PATH		?= ./Output
 OBJ_DIR			?= obj
-HLP_DIR			?= helper
+HLP_DIR			?= util
 
 #
 # 指定一些目录, 还有编译参数支持
@@ -42,7 +42,7 @@ all : main.exe
 #
 # *.o 映射到 $(TAR_PATH)/$(BUILD_DIR)/*.o
 #
-main.exe : main.o tstr.o vlist.o scsocket.o iop_poll.o iop.o iop_server.o strerr.o
+main.exe : main.o tstr.o scsocket.o iop_poll.o iop.o iop_server.o strerr.o
 	$(RUN)
 
 main.o : $(SRC_PATH)/main.c | $(TAR_PATH)

@@ -11,10 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="helper\include\scsocket.h" />
-    <ClInclude Include="helper\include\struct.h" />
-    <ClInclude Include="helper\include\tstr.h" />
-    <ClInclude Include="helper\include\vlist.h" />
     <ClInclude Include="iop\include\iop.h" />
     <ClInclude Include="iop\include\iop_def.h" />
     <ClInclude Include="iop\include\iop_poll.h" />
@@ -24,16 +20,18 @@
     <ClInclude Include="pthread\include\pthread.h" />
     <ClInclude Include="pthread\include\sched.h" />
     <ClInclude Include="pthread\include\semaphore.h" />
+    <ClInclude Include="util\include\scsocket.h" />
+    <ClInclude Include="util\include\struct.h" />
+    <ClInclude Include="util\include\tstr.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="helper\scsocket.c" />
-    <ClCompile Include="helper\strerr.c" />
-    <ClCompile Include="helper\tstr.c" />
-    <ClCompile Include="helper\vlist.c" />
     <ClCompile Include="iop\iop.c" />
     <ClCompile Include="iop\iop_poll.c" />
     <ClCompile Include="iop\iop_server.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="util\scsocket.c" />
+    <ClCompile Include="util\strerr.c" />
+    <ClCompile Include="util\tstr.c" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -80,12 +78,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)pthread/include;$(ProjectDir)iop/include;$(ProjectDir)helper/include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)pthread/lib;$(LibraryPath)</LibraryPath>
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)pthread/include;$(ProjectDir)iop/include;$(ProjectDir)util/include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)pthread/include;$(ProjectDir)iop/include;$(ProjectDir)helper/include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)pthread/include;$(ProjectDir)iop/include;$(ProjectDir)util/include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)pthread/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

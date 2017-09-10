@@ -3,11 +3,11 @@
 #include <iop_poll.h>
 #include <sys/epoll.h>
 
-typedef struct epolls {
+struct epolls {
 	int efd;                    // epoll 文件描述符与
 	uint32_t ets;               // epoll 数组的个数
 	struct epoll_event evs[];   // 事件数组
-} * epolls_t;
+};
 
 // 发送事件转换
 static inline uint32_t _to_events(uint32_t what) {
@@ -35,21 +35,22 @@ static inline uint32_t _to_what(uint32_t events) {
 
 // epoll 句柄释放
 static void _epolls_free(iopbase_t base) {
-	epolls_t mdata = base->mdata;
-	if (!mdata) return;
-	base->mdata = NULL;
-	if (mdata->efd >= 0)
-		close(mdata->efd);
-	mdata->efd = -1;
-	free(mdata);
+	struct epolls * mdata = base->mdata;
+    if (mdata) {
+        base->mdata = NULL;
+        if (mdata->efd >= 0)
+            close(mdata->efd);
+        mdata->efd = -1;
+        free(mdata);
+    }
 }
 
 // epoll 事件调度处理
 static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 	int i, n = 0;
 	iop_t iop;
-	epolls_t mdata = base->mdata;
-	uint32_t what;
+    uint32_t what;
+	struct epolls * mdata = base->mdata;
 
 	do
 		n = epoll_wait(mdata->efd, mdata->evs, mdata->ets, timeout);
@@ -74,7 +75,7 @@ static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 
 // epoll 添加处理事件
 static inline int _epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	epolls_t mdata = base->mdata;
+	struct epolls * mdata = base->mdata;
 	struct epoll_event ev;
 	ev.data.u32 = id;
 	ev.events = _to_events(events);
@@ -83,7 +84,7 @@ static inline int _epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 
 // epoll 删除监视操作
 static inline int _epolls_del(iopbase_t base, uint32_t id, socket_t s) {
-	epolls_t mdata = base->mdata;
+	struct epolls * mdata = base->mdata;
 	struct epoll_event ev;
 	ev.data.u32 = id;
 	return epoll_ctl(mdata->efd, EPOLL_CTL_DEL, s, &ev);
@@ -91,7 +92,7 @@ static inline int _epolls_del(iopbase_t base, uint32_t id, socket_t s) {
 
 // epoll 修改句柄注册
 static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	epolls_t mdata = base->mdata;
+	struct epolls * mdata = base->mdata;
 	struct epoll_event ev;
 	ev.data.u32 = id;
 	ev.events = _to_events(events);
@@ -106,7 +107,7 @@ static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 //
 int
 iop_poll_init(iopbase_t base, unsigned maxsz) {
-	epolls_t mdata;
+	struct epolls * mdata;
 	struct iopop * op = &base->op;
 	int epfd = epoll_create(_INT_POLL);
 	if (epfd < SufBase) {

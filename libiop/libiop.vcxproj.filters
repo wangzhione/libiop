@@ -19,14 +19,14 @@
     <Filter Include="pthread\lib">
       <UniqueIdentifier>{c5ba14ce-eb2f-4965-a60c-fc9b81d8bcd2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="helper">
-      <UniqueIdentifier>{97d9a746-e5ac-4599-b615-59b1de4ec6b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="helper\inlcude">
-      <UniqueIdentifier>{3642c437-0e59-4216-8f24-066135acf813}</UniqueIdentifier>
-    </Filter>
     <Filter Include="iop\partial">
       <UniqueIdentifier>{1d86cf64-67ae-44ef-9f96-fd16c40d93cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{fe72de19-ff0b-4725-bae5-313421340d2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util\include">
+      <UniqueIdentifier>{168a803c-d85c-43f8-bb2c-a8631a95dccb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -42,15 +42,6 @@
     <ClInclude Include="iop\include\iop.h">
       <Filter>iop\include</Filter>
     </ClInclude>
-    <ClInclude Include="helper\include\struct.h">
-      <Filter>helper\inlcude</Filter>
-    </ClInclude>
-    <ClInclude Include="helper\include\tstr.h">
-      <Filter>helper\inlcude</Filter>
-    </ClInclude>
-    <ClInclude Include="helper\include\vlist.h">
-      <Filter>helper\inlcude</Filter>
-    </ClInclude>
     <ClInclude Include="pthread\include\pthread.h">
       <Filter>pthread\include</Filter>
     </ClInclude>
@@ -60,14 +51,20 @@
     <ClInclude Include="pthread\include\semaphore.h">
       <Filter>pthread\include</Filter>
     </ClInclude>
-    <ClInclude Include="helper\include\scsocket.h">
-      <Filter>helper\inlcude</Filter>
-    </ClInclude>
     <ClInclude Include="iop\iop_poll$epoll.h">
       <Filter>iop\partial</Filter>
     </ClInclude>
     <ClInclude Include="iop\iop_poll$select.h">
       <Filter>iop\partial</Filter>
+    </ClInclude>
+    <ClInclude Include="util\include\scsocket.h">
+      <Filter>util\include</Filter>
+    </ClInclude>
+    <ClInclude Include="util\include\struct.h">
+      <Filter>util\include</Filter>
+    </ClInclude>
+    <ClInclude Include="util\include\tstr.h">
+      <Filter>util\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -83,17 +80,14 @@
     <ClCompile Include="iop\iop_poll.c">
       <Filter>iop</Filter>
     </ClCompile>
-    <ClCompile Include="helper\tstr.c">
-      <Filter>helper</Filter>
+    <ClCompile Include="util\scsocket.c">
+      <Filter>util</Filter>
     </ClCompile>
-    <ClCompile Include="helper\vlist.c">
-      <Filter>helper</Filter>
+    <ClCompile Include="util\strerr.c">
+      <Filter>util</Filter>
     </ClCompile>
-    <ClCompile Include="helper\scsocket.c">
-      <Filter>helper</Filter>
-    </ClCompile>
-    <ClCompile Include="helper\strerr.c">
-      <Filter>helper</Filter>
+    <ClCompile Include="util\tstr.c">
+      <Filter>util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

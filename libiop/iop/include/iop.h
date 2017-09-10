@@ -17,18 +17,11 @@ extern iopbase_t iop_create(void);
 extern void iop_delete(iopbase_t base);
 
 //
-// iop_run - 启动循环事件调度,直到退出
-// base		: io事件集基础对象
-// return	: >=SufBase 表示成功, 否则失败
+// iop_dispatch - 启动一次事件调度
+// base		: io调度对象
+// return	: 本次调度处理事件总数
 //
-extern int iop_run(iopbase_t base);
-
-//
-// iop_end - 退出循环事件调度
-// base		: io事件集基础对象
-// return	: void
-//
-extern void iop_end(iopbase_t base);
+extern int iop_dispatch(iopbase_t base);
 
 //
 // iop_add - 添加一个新的事件对象到iopbase 调度事件集中

@@ -3,7 +3,7 @@
 #include <time.h>
 #include <iop_poll.h>
 
-typedef struct selects {
+struct selects {
 #ifdef __GNUC__
 	socket_t maxfd;
 #endif
@@ -11,11 +11,11 @@ typedef struct selects {
 	fd_set wset;
 	fd_set orset;
 	fd_set owset;
-} * selects_t;
+};
 
 // 开始销毁函数
 static inline void _selects_free(iopbase_t base) {
-	selects_t s = base->mdata;
+	struct selects * s = base->mdata;
 	if (s) {
 		base->mdata = NULL;
 		free(s);
@@ -27,7 +27,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	uint32_t revents;
 	int n, num, curid, nextid;
 	struct timeval tv = { 0 };
-	selects_t mdata = base->mdata;
+	struct selects * mdata = base->mdata;
 	if (timeout > 0) {
 		tv.tv_sec = timeout / 1000;
 		tv.tv_usec = (timeout % 1000) * 1000;
@@ -50,7 +50,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	do {
 		// 时间tv会改变, 时间总的而言不变化
 		n = select(mdata->maxfd + 1, &mdata->orset, &mdata->owset, NULL, &tv);
-	} while (n < SufBase && errno == SOCKET_EINTR);
+	} while (n < SufBase && errno == EINTR);
 #endif
 	time(&base->curt);
 	if (n <= 0)
@@ -82,7 +82,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 }
 
 static int _selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	selects_t mdata = base->mdata;
+	struct selects * mdata = base->mdata;
 	if (events & EV_READ)
 		FD_SET(s, &mdata->rset);
 	if (events & EV_WRITE)
@@ -99,7 +99,7 @@ static int _selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 
 // select 删除句柄
 static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
-	selects_t mdata = base->mdata;
+	struct selects * mdata = base->mdata;
 	FD_CLR(s, &mdata->rset);
 	FD_CLR(s, &mdata->wset);
 
@@ -125,7 +125,7 @@ static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
 
 // 事件修改, 其实只处理了读写事件
 static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	selects_t mdata = base->mdata;
+	struct selects * mdata = base->mdata;
 	if (events & EV_READ)
 		FD_SET(s, &mdata->rset);
 	else
@@ -148,7 +148,7 @@ static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 int
 iop_poll_init(iopbase_t base, unsigned maxsz) {
 	struct iopop * op =  &base->op;
-	selects_t mdata = calloc(1, sizeof(struct selects));
+	struct selects * mdata = calloc(1, sizeof(struct selects));
 	if (NULL == mdata) {
 		RETURN(ErrAlloc, "malloc sizeof(struct selects) is error!");
 	}

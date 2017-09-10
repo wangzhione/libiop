@@ -2,8 +2,6 @@
 #define _H_SIMPLEC_IOP_DEF
 
 #include <tstr.h>
-#include <vlist.h>
-#include <pthread.h>
 #include <scsocket.h>
 
 //
@@ -25,10 +23,9 @@
 // _INT_XXX 系统运行中用到的参数
 //
 #define _INT_DISPATCH   (500)       // 事件调度的时间间隔 毫秒
-#define _INT_MAXBUF     (1 << 25)   // socket data buf 最大32M	
-#define _INT_POLL       (1 << 13)   // events limit
 #define _INT_KEEPALIVE  (60)        // 心跳包检查 秒
-#define _INT_STACK      (1 << 23)   // 8M大小
+#define _INT_POLL       (1024)      // events limit
+#define _INT_SEND       (1 << 23)   // socket send buf 最大8M	
 #define _INT_RECV       (1 << 12)   // 4k 接收缓冲区
 
 typedef struct iop * iop_t;
@@ -61,6 +58,7 @@ typedef int (* iop_processor_f)(iopbase_t base, uint32_t id, char * buf, uint32_
 // return	: -1代表要删除事件, 0代表不删除
 //
 typedef int (* iop_event_f)(iopbase_t base, uint32_t id, uint32_t events, void * arg);
+
 
 // 调度处理事件
 typedef int (* iop_dispatch_f)(iopbase_t base, uint32_t id);
@@ -119,10 +117,6 @@ struct iopbase {
 	time_t curt;            // 当前调度时间
 	time_t lastt;           // 上次调度时间
 	time_t lastkeepalivet;  // 最后一次心跳的时间
-
-	vlist_t tplist;         // use for advance tcp server model.
-
-    pthread_t tid;          // 简化理解, 每个iop对象自带一个线程
 };
 
 //

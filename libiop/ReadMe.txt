@@ -14,7 +14,7 @@ window 配置步骤
 		1.1 包含目录
 			$(ProjectDir)pthread/include
 			$(ProjectDir)iop/include
-			$(PtojectDir)helper/include
+			$(PtojectDir)util/include
 		1.2 库目录
 			$(ProjectDir)pthread/lib
 			

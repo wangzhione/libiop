@@ -91,7 +91,7 @@ static int _echo_error(iopbase_t base, uint32_t id, uint32_t err, void * arg) {
 void 
 echo_server(void) {
     int r = -1;
-    iopbase_t base = iop_server(_STR_IP, _SHORT_PORT, _UINT_TIMEOUT,
+    iops_t base = iops_run(_STR_IP, _SHORT_PORT, _UINT_TIMEOUT,
         _echo_parser, _echo_processor, _echo_connect, _echo_destroy, _echo_error);
 
     printf("create a new tcp server ip %s, port %d.\n", _STR_IP, _SHORT_PORT);
@@ -103,7 +103,7 @@ echo_server(void) {
         sh_msleep(_INT_SLEEP);
     }
 
-    iop_end(base);
+    iops_end(base);
 }
 
 #define _INT_LOOP	(10)

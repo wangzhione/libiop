@@ -1,6 +1,12 @@
-﻿#include <iop_server.h>
+﻿#include <pthread.h>
+#include <iop_server.h>
 
-struct iopserver {
+struct iops {
+    iopbase_t base;         // iop 调度总对象
+
+    pthread_t tid;          // 奔跑线程
+    volatile bool irun;     // true 表示 iops 对象奔跑
+
     uint32_t timeout;
     iop_parse_f fparser;
     iop_processor_f fprocessor;
@@ -12,7 +18,7 @@ struct iopserver {
 static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
 	int r, n;
 	iop_t iop = base->iops + id;
-    struct iopserver * sarg = iop->sarg;
+    struct iops * sarg = iop->sarg;
 
 	// 销毁事件
 	if (events & EV_DELETE) {
@@ -91,7 +97,7 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 	return SufBase;
 }
 
-static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iopserver * sarg) {
+static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops * sarg) {
 	int r;
 	iop_t iop;
 	socket_t s;
@@ -118,35 +124,58 @@ static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iopser
 }
 
 // struct iopserver 对象创建
-static int _iopserver_create(iopbase_t base,
+static struct iops * _iops_create(
     const char * host, uint16_t port, uint32_t timeout,
     iop_parse_f fparser, iop_processor_f fprocessor,
     iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
-    struct iopserver * sarg;
+    struct iops * sarg;
 	// 构建 socket tcp 服务
 	socket_t s = socket_tcp(host, port);
 	if (s == INVALID_SOCKET) {
-		RETURN(ErrBase, "socket_tcp err = %s | %u.", host, port);
+		RETURN(NULL, "socket_tcp err = %s | %u.", host, port);
 	}
 
 	// 构建系统参数, 并逐个填充内容
-	if ((sarg = malloc(sizeof(struct iopserver))) == NULL) {
+	if ((sarg = malloc(sizeof(struct iops))) == NULL) {
 		socket_close(s);
-		RETURN(ErrAlloc, "calloc struct ioptcp is error!");
+		RETURN(NULL, "calloc struct ioptcp is error!");
 	}
+
+    // 如果创建最终 iopbase_t 对象失败, 直接返回
+    if ((sarg->base = iop_create()) == NULL) {
+        free(sarg);
+        socket_close(s);
+        RETURN(NULL, "iop_create is error!");
+    }
+
+    sarg->irun = true;
 	sarg->timeout = timeout;
     sarg->fparser = fparser;
     sarg->fprocessor = fprocessor;
 	sarg->fconnect = fconnect;
 	sarg->fdestroy = fdestroy;
 	sarg->ferror = ferror;
-	base->tplist = vlist_add(base->tplist, sarg);
     // 添加主 iop 对象, 永不超时
-	return iop_add(base, s, EV_READ, -1, (iop_event_f)_fconnect, sarg);
+    if (SOCKET_ERROR == 
+        iop_add(sarg->base, s, EV_READ, -1, (iop_event_f)_fconnect, sarg)) {
+        iop_delete(sarg->base);
+        free(sarg);
+        socket_close(s);
+        RETURN(NULL, "iop_add is read -1 error!");
+    }
+
+    return sarg;
+}
+
+static void _iops_run(struct iops * iops) {
+    iopbase_t base = iops->base;
+    while (iops->irun) {
+        iop_dispatch(base);   
+    }
 }
 
 //
-// iop_server - 启动一个 iop tcp server, 开始监听处理
+// iops_run - 启动一个 iop tcp server, 开始监听处理
 // host         : 服务器ip
 // port         : 服务器端口
 // timeout      : 超时时间阀值
@@ -155,29 +184,38 @@ static int _iopserver_create(iopbase_t base,
 // fconnect     : 当连接创建时候回调
 // fdestroy     : 退出时间的回调
 // ferror       : 错误的时候回调
-// return       : 返回 iop 对象, 结束时候可以调用 iop_end
+// return       : 返回 iops_t 对象, 结束时候可以调用 iops_end
 //
-iopbase_t 
-iop_server(const char * host, uint16_t port, uint32_t timeout,
+iops_t 
+iops_run(const char * host, uint16_t port, uint32_t timeout,
     iop_parse_f fparser, iop_processor_f fprocessor,
     iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
     int r;
-    iopbase_t base = iop_create();
-    if (NULL == base)
-        CERR_EXIT("iop_create is error!");
-    
-    r = _iopserver_create(base, host, port, timeout, 
+    struct iops * iops = _iops_create(host, port, timeout, 
         fparser, fprocessor, fconnect, fdestroy, ferror);
-    if (r < SufBase) {
-        iop_delete(base);
-        CERR_EXIT("_iopserver_create base error r = %p, %d.", base, r);
-    }
-    
-    r = iop_run(base);
-    if (r < SufBase) {
-        iop_delete(base);
-        CERR_EXIT("iop_run base error r = %p, %d.", base, r);
+    if (NULL == iops) {
+        CERR_EXIT("_iops_create iops is empty!");
     }
 
-    return base;
+    r = pthread_create(&iops->tid, NULL, (start_f)_iops_run, iops);
+    if (r < SufBase) {
+        CERR_EXIT("pthread_create error r = %p, %d.", iops, r);
+    }
+
+    return iops;
+}
+
+//
+// iops_end - 结束一个 iops 服务
+// iops     : iops_run 返回的对象
+// return   : void
+//
+inline void 
+iops_end(iops_t iops) {
+    if (iops && iops->irun) {
+        iops->irun = false;
+        pthread_join(iops->tid, NULL);
+        iop_delete(iops->base);
+        free(iops);
+    }
 }
