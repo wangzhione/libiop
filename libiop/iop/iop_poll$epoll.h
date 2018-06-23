@@ -1,4 +1,4 @@
-﻿#if defined(_HAVE_EPOLL)
+﻿#ifdef _EPOLL
 
 #include <iop_poll.h>
 #include <sys/epoll.h>
@@ -131,4 +131,4 @@ iop_poll_init(iopbase_t base, unsigned maxsz) {
 	return SufBase;
 }
 
-#endif//_HAVE_EPOLL
+#endif//_EPOLL

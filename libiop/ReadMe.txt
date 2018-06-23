@@ -12,14 +12,15 @@
 window 配置步骤
 	1. 配置包含目录 VC++目录
 		1.1 包含目录
-			$(ProjectDir)pthread/include
 			$(ProjectDir)iop/include
 			$(PtojectDir)util/include
+			$(ProjectDir)pthread/include
 		1.2 库目录
 			$(ProjectDir)pthread/lib
 			
 	2. C/C++ 预处理器 -> 预处理定义
 		_DEBUG
+		PTW32_STATIC_LIB
 		_CRT_SECURE_NO_WARNINGS
 		_CRT_NONSTDC_NO_DEPRECATE
 		WIN32_LEAN_AND_MEAN
@@ -34,6 +35,6 @@ linux 配置步骤
 	1. 参照 Makefile 文件
 	
 	2. 参照 DEF 替换量
-		2.1 _D_HAVE_EPOLL  表示开启 linux  epoll io api
+		2.1 D=-D_HAVE_EPOLL 表示开启 linux epoll io api
 	
 /////////////////////////////////////////////////////////////////////////////

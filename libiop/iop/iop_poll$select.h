@@ -1,4 +1,4 @@
-﻿#if !defined(_HAVE_EPOLL)
+﻿#ifndef _EPOLL
 
 #include <time.h>
 #include <iop_poll.h>
