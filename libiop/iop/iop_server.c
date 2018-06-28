@@ -23,17 +23,17 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 	// 销毁事件
 	if (events & EV_DELETE) {
 		sarg->fdestroy(base, id, arg);
-		return SufBase;
+		return SBase;
 	}
 
 	// 读事件
 	if (events & EV_READ) {
 		n = iop_recv(base, id);
 		// 服务器关闭, 直接返回关闭操作
-		if (n == ErrClose)
-			return ErrClose;
+		if (n == EClose)
+			return EClose;
 
-		if (n < SufBase) {
+		if (n < SBase) {
 			r = sarg->ferror(base, id, EV_READ, arg);
 			return r;
 		}
@@ -41,17 +41,17 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 		for (;;) {
 			// 读取链接关闭
 			n = sarg->fparser(iop->rbuf->str, iop->rbuf->len);
-			if (n < SufBase) {
+			if (n < SBase) {
 				r = sarg->ferror(base, id, EV_CREATE, arg);
-				if (r < SufBase)
+				if (r < SBase)
 					return r;
 				break;
 			}
-			if (n == SufBase)
+			if (n == SBase)
 				break;
 
 			r = sarg->fprocessor(base, id, iop->rbuf->str, n, arg);
-			if (SufBase <= r) {
+			if (SBase <= r) {
 				if (n == iop->rbuf->len) {
 					iop->rbuf->len = 0;
 					break;
@@ -70,16 +70,16 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 			return iop_mod(base, id, events);
 
 		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
-		if (n < SufBase) {
+		if (n < SBase) {
             // EINPROGRESS : 进程正在处理; EWOULDBOCK : 当前缓冲区已经写满可以继续写
 			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
 				r = sarg->ferror(base, id, EV_WRITE, arg);
-				if (r < SufBase)
+				if (r < SBase)
 					return r;
 			}
-			return SufBase;
+			return SBase;
 		}
-		if (n == SufBase) return SufBase;
+		if (n == SBase) return SBase;
 
 		if (n >= (int)iop->sbuf->len)
 			iop->sbuf->len = 0;
@@ -90,11 +90,11 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 	// 超时时间处理
 	if (events & EV_TIMEOUT) {
 		r = sarg->ferror(base, id, EV_TIMEOUT, arg);
-		if (r < SufBase)
+		if (r < SBase)
 			return r;
 	}
 
-	return SufBase;
+	return SBase;
 }
 
 static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops * sarg) {
@@ -106,11 +106,11 @@ static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops *
 		iop = base->iops + id;
 		s = socket_accept(iop->s, NULL);
 		if (INVALID_SOCKET == s) {
-			RETURN(ErrFd, "socket_accept is error id = %u.", id);
+			RETURN(EFd, "socket_accept is error id = %u.", id);
 		}
 
 		r = iop_add(base, s, EV_READ, sarg->timeout, _fdispatch, NULL);
-		if (r < SufBase) {
+		if (r < SBase) {
 			socket_close(r);
 			RETURN(r, "iop_add EV_READ timeout = %d, r = %u", sarg->timeout, r);
 		}
@@ -120,7 +120,7 @@ static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops *
 		sarg->fconnect(base, r, iop->arg);
 	}
 
-	return SufBase;
+	return SBase;
 }
 
 // struct iops 对象创建
@@ -194,12 +194,12 @@ iops_run(const char * host, uint16_t port, uint32_t timeout,
     struct iops * iops = _iops_create(host, port, timeout, 
         fparser, fprocessor, fconnect, fdestroy, ferror);
     if (NULL == iops) {
-        CERR_EXIT("_iops_create iops is empty!");
+        EXIT("_iops_create iops is empty!");
     }
 
     r = pthread_create(&iops->tid, NULL, (start_f)_iops_run, iops);
-    if (r < SufBase) {
-        CERR_EXIT("pthread_create error r = %p, %d.", iops, r);
+    if (r < SBase) {
+        EXIT("pthread_create error r = %p, %d.", iops, r);
     }
 
     return iops;

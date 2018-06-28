@@ -3,7 +3,7 @@
 
 // 默认event 调度事件
 static inline int _iop_devent(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
-	return SufBase;
+	return SBase;
 }
 
 // 构建对象
@@ -53,7 +53,7 @@ inline iopbase_t
 iop_create(void) {
 	iopbase_t base = _iopbase_new(_INT_POLL);
 	if (base) {
-		if (SufBase > iop_poll_init(base, _INT_POLL)) {
+		if (SBase > iop_poll_init(base, _INT_POLL)) {
 			iop_delete(base);
 			RETURN(NULL, "iop_poll_init _INT_POLL = %d error!", _INT_POLL);
 		}
@@ -102,7 +102,7 @@ iop_dispatch(iopbase_t base) {
 	int curid, nextid;
     int r = base->op.fdispatch(base, base->dispatchval);
 	// 调度一次结果监测
-	if (r < SufBase)
+	if (r < SBase)
 		return r;
 
 	// 判断时间信息
@@ -157,7 +157,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 	int r = 0;
 	iop_t iop = _iop_get(base);
 	if (NULL == iop) {
-		RETURN(ErrBase, "_iop_get is base error = %p.", base);
+		RETURN(EBase, "_iop_get is base error = %p.", base);
 	}
 
 	iop->s = s;
@@ -174,7 +174,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 		iop->type = IOP_IO;
 		socket_set_nonblock(s);
 		r = base->op.fadd(base, iop->id, s, ets);
-		if (r < SufBase) {
+		if (r < SBase) {
 			iop_del(base, iop->id);
 			return SOCKET_ERROR;
 		}
@@ -225,7 +225,7 @@ iop_del(iopbase_t base, uint32_t id) {
 
 	iop->type = IOP_FREE;
 
-	return SufBase;
+	return SBase;
 }
 
 //
@@ -239,10 +239,10 @@ int
 iop_mod(iopbase_t base, uint32_t id, uint32_t events) {
 	iop_t iop = base->iops + id;
 	if (iop->type != IOP_IO) {
-		RETURN(ErrBase, "iop type is error = [%u, %u].", iop->type, id);
+		RETURN(EBase, "iop type is error = [%u, %u].", iop->type, id);
 	}
 	if (iop->s == INVALID_SOCKET) {
-		RETURN(ErrBase, "iop socket is error = [%"PRIu64", %u].", (int64_t)iop->s, id);
+		RETURN(EBase, "iop socket is error = [%"PRIu64", %u].", (int64_t)iop->s, id);
 	}
 
 	return base->op.fmod(base, iop->id, iop->s, events);
@@ -251,7 +251,7 @@ iop_mod(iopbase_t base, uint32_t id, uint32_t events) {
 // iop 轮询事件的发送接收操作, 发送没变化, 接收放在接收缓冲区
 int
 iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
-	int r = SufBase;
+	int r = SBase;
 	const char * csts = data;
 	iop_t iop = base->iops + id;
 	tstr_t buf = iop->sbuf;
@@ -259,10 +259,10 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 	if (buf->len <= 0) {
 		r = socket_send(iop->s, data, len);
 		if (r >= 0 && (uint32_t)r >= len)
-			return SufBase;
+			return SBase;
 		if (r < 0) {
 			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
-				RETURN(ErrBase, "socket_send error r = %d.", r);
+				RETURN(EBase, "socket_send error r = %d.", r);
 			}
 			r = 0;
 		}
@@ -271,14 +271,14 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 
 	// 剩余的发送部分, 下次再发
 	if (buf->cap > _INT_SEND) {
-		RETURN(ErrAlloc, "iop->sbuf->capacity error too length = %zu.", buf->cap);
+		RETURN(EAlloc, "iop->sbuf->capacity error too length = %zu.", buf->cap);
 	}
 
 	// 开始填充内存
 	tstr_appendn(buf, csts, len - r);
 
 	if (iop->events & EV_WRITE)
-		return SufBase;
+		return SBase;
 
 	return iop_mod(base, id, iop->events | EV_WRITE);;
 }
@@ -291,7 +291,7 @@ iop_recv(iopbase_t base, uint32_t id) {
 	tstr_t buf = iop->rbuf;
 
 	if (buf->cap > _INT_SEND) {
-		RETURN(ErrAlloc, "iop->rbuf->capacity error too length = %zu.", buf->cap);
+		RETURN(EAlloc, "iop->rbuf->capacity error too length = %zu.", buf->cap);
 	}
 	tstr_expand(buf, _INT_RECV);
 
@@ -299,15 +299,15 @@ iop_recv(iopbase_t base, uint32_t id) {
 	r = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);
 	if (r < 0) {
 		if (errno != EINPROGRESS && errno != EWOULDBOCK) {
-			RETURN(ErrBase, "socket_recv error r = %d.", r);
+			RETURN(EBase, "socket_recv error r = %d.", r);
 		}
 		return r;
 	}
 
 	// 返回最终结果
 	if (r == 0)
-		return ErrClose;
+		return EClose;
 
 	buf->len += r;
-	return SufBase;
+	return SBase;
 }

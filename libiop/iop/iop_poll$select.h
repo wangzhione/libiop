@@ -50,7 +50,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	do {
 		// 时间tv会改变, 时间总的而言不变化
 		n = select(mdata->maxfd + 1, &mdata->orset, &mdata->owset, NULL, &tv);
-	} while (n < SufBase && errno == EINTR);
+	} while (n < SBase && errno == EINTR);
 #endif
 	time(&base->curt);
 	if (n <= 0)
@@ -94,7 +94,7 @@ static int _selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 		mdata->maxfd = s;
 #endif
 
-	return SufBase;
+	return SBase;
 }
 
 // select 删除句柄
@@ -120,7 +120,7 @@ static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
 	}
 #endif
 
-	return SufBase;
+	return SBase;
 }
 
 // 事件修改, 其实只处理了读写事件
@@ -136,21 +136,21 @@ static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 	else
 		FD_CLR(s, &mdata->wset);
 
-	return SufBase;
+	return SBase;
 }
 
 //
 // iop_poll_init - 通信的底层接口
 // base		: 总的iop对象管理器
 // maxsz	: 开启的最大处理数
-// return	: SufBase 表示成功
+// return	: SBase 表示成功
 //
 int
 iop_poll_init(iopbase_t base, unsigned maxsz) {
 	struct iopop * op =  &base->op;
 	struct selects * mdata = calloc(1, sizeof(struct selects));
 	if (NULL == mdata) {
-		RETURN(ErrAlloc, "malloc sizeof(struct selects) is error!");
+		RETURN(EAlloc, "malloc sizeof(struct selects) is error!");
 	}
 	base->mdata = mdata;
 
@@ -160,7 +160,7 @@ iop_poll_init(iopbase_t base, unsigned maxsz) {
 	op->fdel = _selects_del;
 	op->fmod = _selects_mod;
 
-	return SufBase;
+	return SBase;
 }
 
-#endif
+#endif//!_EPOLL

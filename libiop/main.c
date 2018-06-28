@@ -82,7 +82,7 @@ static int _echo_error(iopbase_t base, uint32_t id, uint32_t err, void * arg) {
 	default:
 		CERR("default id = %u, err = %u.", id, err);
 	}
-	return SufBase;
+	return SBase;
 }
 
 //
@@ -118,7 +118,7 @@ echo_client(void) {
 	printf("echo_client connect [%s:%d]...\n", _STR_IP, _SHORT_PORT);
 	socket_t s = socket_connectos(_STR_IP, _SHORT_PORT, _UINT_TIMEOUT);
 	if (s == INVALID_SOCKET) {
-		CERR_EXIT("socket_connectos error [%s:%u:%d]", _STR_IP, _SHORT_PORT, _UINT_TIMEOUT);
+		EXIT("socket_connectos error [%s:%u:%d]", _STR_IP, _SHORT_PORT, _UINT_TIMEOUT);
 	}
 
 	while (++i < 10) {
@@ -127,12 +127,12 @@ echo_client(void) {
 		r = socket_sendn(s, str, sizeof str);
 		if (r == SOCKET_ERROR) {
 			socket_close(s);
-			CERR_EXIT("socket_sendn r = %d.", r);
+			EXIT("socket_sendn r = %d.", r);
 		}
 		r = socket_recvn(s, str, sizeof str);
 		if (r == SOCKET_ERROR) {
 			socket_close(s);
-			CERR_EXIT("socket_recvn r = %d.", r);
+			EXIT("socket_recvn r = %d.", r);
 		}
 		printf("socket_recvn len = %zu, str = [%s].\n", sizeof str, str);
 	}

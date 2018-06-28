@@ -54,7 +54,7 @@ static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 
 	do
 		n = epoll_wait(mdata->efd, mdata->evs, mdata->ets, timeout);
-	while (n < SufBase && errno == EINTR);
+	while (n < SBase && errno == EINTR);
 
 	// 得到当前时间
 	time(&base->curt);
@@ -103,20 +103,20 @@ static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 // iop_poll_init - 通信的底层接口
 // base		: 总的iop对象管理器
 // maxsz	: 开启的最大处理数
-// return	: SufBase 表示成功
+// return	: SBase 表示成功
 //
 int
 iop_poll_init(iopbase_t base, unsigned maxsz) {
 	struct epolls * mdata;
 	struct iopop * op = &base->op;
 	int epfd = epoll_create(_INT_POLL);
-	if (epfd < SufBase) {
-		RETURN(ErrBase, "epoll_create %d is error!", _INT_POLL);
+	if (epfd < SBase) {
+		RETURN(EBase, "epoll_create %d is error!", _INT_POLL);
 	}
 
 	mdata = malloc(sizeof(struct epolls) + maxsz * sizeof(struct epoll_event));
 	if (NULL == mdata) {
-		RETURN(ErrAlloc, "malloc error epolls maxsz = %u.", maxsz);
+		RETURN(EAlloc, "malloc error epolls maxsz = %u.", maxsz);
 	}
 	mdata->efd = epfd;
 	mdata->ets = maxsz;
@@ -128,7 +128,7 @@ iop_poll_init(iopbase_t base, unsigned maxsz) {
 	op->fdel = _epolls_del;
 	op->fmod = _epolls_mod;
 
-	return SufBase;
+	return SBase;
 }
 
 #endif//_EPOLL

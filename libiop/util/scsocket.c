@@ -95,7 +95,7 @@ socket_write(socket_t s, const void * data, int sz) {
 int 
 socket_addr(const char * ip, uint16_t port, sockaddr_t * addr) {
     if (!ip || !*ip || !addr)
-        RETURN(ErrParam, "check empty ip = %s, port = %hu, addr = %p.", ip, port, addr);
+        RETURN(EParam, "check empty ip = %s, port = %hu, addr = %p.", ip, port, addr);
 
     addr->sin_family = AF_INET;
     addr->sin_port = htons(port);
@@ -103,13 +103,13 @@ socket_addr(const char * ip, uint16_t port, sockaddr_t * addr) {
     if (addr->sin_addr.s_addr == INADDR_NONE) {
         struct hostent * host = gethostbyname(ip);
         if (!host || !host->h_addr)
-            RETURN(ErrParam, "check ip is error = %s.", ip);
+            RETURN(EParam, "check ip is error = %s.", ip);
         // 尝试一种, 默认ipv4
         memcpy(&addr->sin_addr, host->h_addr, host->h_length);
     }
     memset(addr->sin_zero, 0, sizeof addr->sin_zero);
 
-    return SufBase;
+    return SBase;
 }
 
 //
@@ -132,7 +132,7 @@ socket_set_block(socket_t s) {
         return SOCKET_ERROR;
     if (mode & O_NONBLOCK)
         return fcntl(s, F_SETFL, mode & ~O_NONBLOCK);
-    return SufBase;
+    return SBase;
 #endif	
 }
 
@@ -146,7 +146,7 @@ socket_set_nonblock(socket_t s) {
     if (mode == SOCKET_ERROR)
         return SOCKET_ERROR;
     if (mode & O_NONBLOCK)
-        return SufBase;
+        return SBase;
     return fcntl(s, F_SETFL, mode | O_NONBLOCK);
 #endif	
 }
@@ -368,7 +368,7 @@ inline int
 socket_connects(socket_t s, const char * ip, uint16_t port) {
     sockaddr_t addr;
     int r = socket_addr(ip, port, &addr);
-    if (r < SufBase)
+    if (r < SBase)
         return r;
     return socket_connect(s, &addr);
 }
@@ -384,13 +384,13 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 
     // 非阻塞登录, 先设置非阻塞模式
     r = socket_set_nonblock(s);
-    if (r < SufBase) {
+    if (r < SBase) {
         RETURN(r, "socket_set_nonblock error!");
     }
 
     // 尝试连接一下, 非阻塞connect 返回 -1 并且 errno == EINPROGRESS 表示正在建立链接
     r = socket_connect(s, addr);
-    if (r >= SufBase) goto _return;
+    if (r >= SBase) goto _return;
 
     // 链接还在进行中, linux这里显示 EINPROGRESS，winds应该是 WASEWOULDBLOCK
     if (errno != ECONNECTED) {
@@ -398,8 +398,8 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
         goto _return;
     }
 
-    // 超时 timeout, 直接返回结果 ErrBase = -1 错误
-    r = ErrBase;
+    // 超时 timeout, 直接返回结果 EBase = -1 错误
+    r = EBase;
     if (ms == 0) goto _return;
 
     FD_ZERO(&rset); FD_SET(s, &rset);
@@ -413,7 +413,7 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
 
     // 当连接成功时候,描述符会变成可写
     if (n == 1 && FD_ISSET(s, &wset)) {
-        r = SufBase;
+        r = SBase;
         goto _return;
     }
 
@@ -422,7 +422,7 @@ socket_connecto(socket_t s, const sockaddr_t * addr, int ms) {
         socklen_t len = sizeof n;
         // 只要最后没有 error那就 链接成功
         if (!getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&n, &len) && !n)
-            r = SufBase;
+            r = SBase;
     }
 
 _return:
@@ -441,11 +441,11 @@ socket_connectos(const char * host, uint16_t port, int ms) {
 
     // 构建ip地址
     r = socket_addr(host, port, &addr);
-    if (r < SufBase)
+    if (r < SBase)
         return r;
 
     r = socket_connecto(s, &addr, ms);
-    if (r < SufBase) {
+    if (r < SBase) {
         socket_close(s);
         RETURN(INVALID_SOCKET, "socket_connecto host port ms = %s, %u, %d!", host, port, ms);
     }

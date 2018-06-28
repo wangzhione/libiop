@@ -35,6 +35,6 @@ linux 配置步骤
 	1. 参照 Makefile 文件
 	
 	2. 参照 DEF 替换量
-		2.1 D=-D_HAVE_EPOLL 表示开启 linux epoll io api
+		2.1 D=-D_EPOLL 表示开启 linux epoll io api
 	
 /////////////////////////////////////////////////////////////////////////////
