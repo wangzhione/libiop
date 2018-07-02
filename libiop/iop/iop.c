@@ -40,8 +40,6 @@ static iopbase_t _iopbase_new(uint32_t maxio) {
 		iop->next = ++i;
 	}
 
-	// 设置文件描述符次数
-	SET_RLIMIT_NOFILE(_INT_POLL);
 	return base;
 }
 
@@ -261,7 +259,7 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 		if (r >= 0 && (uint32_t)r >= len)
 			return SBase;
 		if (r < 0) {
-			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
+			if (errno != EINTR && errno != EAGAIN) {
 				RETURN(EBase, "socket_send error r = %d.", r);
 			}
 			r = 0;
@@ -298,7 +296,7 @@ iop_recv(iopbase_t base, uint32_t id) {
 	// 开始接收数据
 	r = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);
 	if (r < 0) {
-		if (errno != EINPROGRESS && errno != EWOULDBOCK) {
+		if (errno != EINTR && errno != EAGAIN) {
 			RETURN(EBase, "socket_recv error r = %d.", r);
 		}
 		return r;

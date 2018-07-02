@@ -57,13 +57,13 @@
     <ClInclude Include="iop\iop_poll$select.h">
       <Filter>iop\partial</Filter>
     </ClInclude>
-    <ClInclude Include="util\include\scsocket.h">
-      <Filter>util\include</Filter>
-    </ClInclude>
     <ClInclude Include="util\include\struct.h">
       <Filter>util\include</Filter>
     </ClInclude>
     <ClInclude Include="util\include\tstr.h">
+      <Filter>util\include</Filter>
+    </ClInclude>
+    <ClInclude Include="util\include\socket.h">
       <Filter>util\include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,13 +80,13 @@
     <ClCompile Include="iop\iop_poll.c">
       <Filter>iop</Filter>
     </ClCompile>
-    <ClCompile Include="util\scsocket.c">
-      <Filter>util</Filter>
-    </ClCompile>
     <ClCompile Include="util\strerr.c">
       <Filter>util</Filter>
     </ClCompile>
     <ClCompile Include="util\tstr.c">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="util\socket.c">
       <Filter>util</Filter>
     </ClCompile>
   </ItemGroup>

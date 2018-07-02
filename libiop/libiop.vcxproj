@@ -20,7 +20,7 @@
     <ClInclude Include="pthread\include\pthread.h" />
     <ClInclude Include="pthread\include\sched.h" />
     <ClInclude Include="pthread\include\semaphore.h" />
-    <ClInclude Include="util\include\scsocket.h" />
+    <ClInclude Include="util\include\socket.h" />
     <ClInclude Include="util\include\struct.h" />
     <ClInclude Include="util\include\tstr.h" />
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClCompile Include="iop\iop_poll.c" />
     <ClCompile Include="iop\iop_server.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="util\scsocket.c" />
+    <ClCompile Include="util\socket.c" />
     <ClCompile Include="util\strerr.c" />
     <ClCompile Include="util\tstr.c" />
   </ItemGroup>
@@ -100,7 +100,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalOptions>/ignore:4099 /LTCG %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>pthread_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;pthread_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent />

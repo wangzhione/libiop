@@ -2,7 +2,7 @@
 #define _H_SIMPLEC_IOP_DEF
 
 #include <tstr.h>
-#include <scsocket.h>
+#include <socket.h>
 
 //
 // IOP_XXX 是处理内部事件

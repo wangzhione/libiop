@@ -71,8 +71,8 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 
 		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
 		if (n < SBase) {
-            // EINPROGRESS : 进程正在处理; EWOULDBOCK : 当前缓冲区已经写满可以继续写
-			if (errno != EINPROGRESS && errno != EWOULDBOCK) {
+            // EINTR : 进程还可以处理; EAGIN : 当前缓冲区已经写满可以继续写
+			if (errno != EINTR && errno != EAGAIN) {
 				r = sarg->ferror(base, id, EV_WRITE, arg);
 				if (r < SBase)
 					return r;
@@ -124,82 +124,69 @@ static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops *
 }
 
 // struct iops 对象创建
-static struct iops * _iops_create(
-    const char * host, uint16_t port, uint32_t timeout,
+static struct iops * _iops_create(const char * host, uint32_t timeout,
     iop_parse_f fparser, iop_processor_f fprocessor,
     iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
-    struct iops * sarg;
-	// 构建 socket tcp 服务
-	socket_t s = socket_tcp(host, port);
-	if (s == INVALID_SOCKET) {
-		RETURN(NULL, "socket_tcp err = %s | %u.", host, port);
-	}
+    // 构建 socket tcp 服务
+    socket_t s = socket_tcp(host);
+    if (INVALID_SOCKET == s) {
+        RETNUL("socket_tcp err host is %s", host);
+    }
 
-	// 构建系统参数, 并逐个填充内容
-	if ((sarg = malloc(sizeof(struct iops))) == NULL) {
-		socket_close(s);
-		RETURN(NULL, "calloc struct ioptcp is error!");
-	}
-
+    struct iops * p = malloc(sizeof(struct iops));
     // 如果创建最终 iopbase_t 对象失败, 直接返回
-    if ((sarg->base = iop_create()) == NULL) {
-        free(sarg);
-        socket_close(s);
-        RETURN(NULL, "iop_create is error!");
+    if ((p->base = iop_create()) == NULL) {
+        free(p); socket_close(s);
+        RETNUL("iop_create is error!");
     }
 
-    sarg->irun = true;
-	sarg->timeout = timeout;
-    sarg->fparser = fparser;
-    sarg->fprocessor = fprocessor;
-	sarg->fconnect = fconnect;
-	sarg->fdestroy = fdestroy;
-	sarg->ferror = ferror;
+    p->irun = true;
+    p->timeout = timeout;
+    p->fparser = fparser;
+    p->fprocessor = fprocessor;
+    p->fconnect = fconnect;
+    p->fdestroy = fdestroy;
+    p->ferror = ferror;
     // 添加主 iop 对象, 永不超时
-    if (SOCKET_ERROR == 
-        iop_add(sarg->base, s, EV_READ, -1, (iop_event_f)_fconnect, sarg)) {
-        iop_delete(sarg->base);
-        free(sarg);
-        socket_close(s);
-        RETURN(NULL, "iop_add is read -1 error!");
+    if (SOCKET_ERROR == iop_add(p->base, s, EV_READ, -1, (iop_event_f)_fconnect, p)) {
+        iop_delete(p->base);
+        free(p); socket_close(s);
+        RETNUL("iop_add is read -1 error!");
     }
 
-    return sarg;
+    return p;
 }
 
 static void _iops_run(struct iops * iops) {
     iopbase_t base = iops->base;
     while (iops->irun) {
-        iop_dispatch(base);   
+        iop_dispatch(base);
     }
 }
 
 //
 // iops_run - 启动一个 iop tcp server, 开始监听处理
-// host         : 服务器ip
-// port         : 服务器端口
+// host         : 服务器地址
 // timeout      : 超时时间阀值
 // fparser      : 协议解析器
 // fprocessor   : 数据处理器
 // fconnect     : 当连接创建时候回调
 // fdestroy     : 退出时间的回调
 // ferror       : 错误的时候回调
-// return       : 返回 iops_t 对象, 结束时候可以调用 iops_end
+// return       : 返回 iops_t 对象, 调用 iops_end 同步结束
 //
 iops_t 
-iops_run(const char * host, uint16_t port, uint32_t timeout,
+iops_run(const char * host, uint32_t timeout,
     iop_parse_f fparser, iop_processor_f fprocessor,
     iop_f fconnect, iop_f fdestroy, iop_event_f ferror) {
-    int r;
-    struct iops * iops = _iops_create(host, port, timeout, 
+    struct iops * iops = _iops_create(host, timeout, 
         fparser, fprocessor, fconnect, fdestroy, ferror);
     if (NULL == iops) {
         EXIT("_iops_create iops is empty!");
     }
 
-    r = pthread_create(&iops->tid, NULL, (start_f)_iops_run, iops);
-    if (r < SBase) {
-        EXIT("pthread_create error r = %p, %d.", iops, r);
+    if (pthread_create(&iops->tid, NULL, (start_f)_iops_run, iops)) {
+        EXIT("pthread_create error r = %p", iops);
     }
 
     return iops;
