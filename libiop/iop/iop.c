@@ -22,9 +22,9 @@ static iopbase_t _iopbase_new(uint32_t maxio) {
 
 	// 开始部署数据
 	base->maxio = maxio;
-	base->dispatchval = _INT_DISPATCH;
-	base->lastt = time(&base->curt);
-	base->lastkeepalivet = base->curt;
+	base->dispatch = INT_DISPATCH;
+	base->last = time(&base->curt);
+	base->keepalive = base->curt;
 	base->iohead = -1;
 	base->freetail = maxio - 1;
 
@@ -49,11 +49,11 @@ static iopbase_t _iopbase_new(uint32_t maxio) {
 //
 inline iopbase_t
 iop_create(void) {
-	iopbase_t base = _iopbase_new(_INT_POLL);
+	iopbase_t base = _iopbase_new(INT_POLL);
 	if (base) {
-		if (SBase > iop_poll_init(base, _INT_POLL)) {
+		if (SBase > iop_poll_init(base)) {
 			iop_delete(base);
-			RETURN(NULL, "iop_poll_init _INT_POLL = %d error!", _INT_POLL);
+			RETURN(NULL, "iop_poll_init base error!");
 		}
 	}
 	return base;
@@ -74,8 +74,8 @@ iop_delete(iopbase_t base) {
 
 		for (i = 0; i < base->maxio; ++i) {
 			iop_t iop = base->iops + i;
-			TSTR_DELETE(iop->sbuf);
-			TSTR_DELETE(iop->rbuf);
+			TSTR_DELETE(iop->suf);
+			TSTR_DELETE(iop->ruf);
 		}
 
 		base->maxio = 0;
@@ -98,27 +98,27 @@ int
 iop_dispatch(iopbase_t base) {
 	iop_t iop;
 	int curid, nextid;
-    int r = base->op.fdispatch(base, base->dispatchval);
+    int r = base->op.fdispatch(base, base->dispatch);
 	// 调度一次结果监测
 	if (r < SBase)
 		return r;
 
 	// 判断时间信息
-	if (base->curt > base->lastt) {
+	if (base->curt > base->last) {
 		// clear keepalive, 60 seconds per times
-		if (base->curt > base->lastkeepalivet + _INT_KEEPALIVE) {
-			base->lastkeepalivet = base->curt;
+		if (base->curt > base->keepalive + INT_KEEPALIVE) {
+			base->keepalive = base->curt;
 			curid = base->iohead;
 			while (curid != INVALID_SOCKET) {
 				iop = base->iops + curid;
 				nextid = iop->next;
-				if (iop->timeout > 0 && iop->lastt + iop->timeout < base->curt)
-					IOP_CB(base, iop, EV_TIMEOUT);
+				if (iop->timeout > 0 && iop->last + iop->timeout < base->curt)
+					iop_callback(base, iop, EV_TIMEOUT);
 				curid = nextid;
 			}
 		}
 
-		base->lastt = base->curt;
+		base->last = base->curt;
 	}
 
 	return r;
@@ -162,7 +162,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 	iop->events = ets;
 	iop->timeout = to;
 	iop->fevent = fev;
-	iop->lastt = base->curt;
+	iop->last = base->curt;
 	iop->arg = arg;
 
 	if (s != INVALID_SOCKET) {
@@ -252,7 +252,7 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 	int r = SBase;
 	const char * csts = data;
 	iop_t iop = base->iops + id;
-	tstr_t buf = iop->sbuf;
+	tstr_t buf = iop->suf;
 
 	if (buf->len <= 0) {
 		r = socket_send(iop->s, data, len);
@@ -268,7 +268,7 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 	}
 
 	// 剩余的发送部分, 下次再发
-	if (buf->cap > _INT_SEND) {
+	if (buf->cap > INT_SEND) {
 		RETURN(EAlloc, "iop->sbuf->capacity error too length = %zu.", buf->cap);
 	}
 
@@ -286,12 +286,12 @@ int
 iop_recv(iopbase_t base, uint32_t id) {
 	int r;
 	iop_t iop = base->iops + id;
-	tstr_t buf = iop->rbuf;
+	tstr_t buf = iop->ruf;
 
-	if (buf->cap > _INT_SEND) {
+	if (buf->cap > INT_SEND) {
 		RETURN(EAlloc, "iop->rbuf->capacity error too length = %zu.", buf->cap);
 	}
-	tstr_expand(buf, _INT_RECV);
+	tstr_expand(buf, INT_RECV);
 
 	// 开始接收数据
 	r = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);

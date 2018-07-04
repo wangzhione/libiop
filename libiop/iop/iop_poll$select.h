@@ -15,9 +15,9 @@ struct selects {
 
 // 开始销毁函数
 static inline void _selects_free(iopbase_t base) {
-	struct selects * s = base->mdata;
+	struct selects * s = base->mata;
 	if (s) {
-		base->mdata = NULL;
+		base->mata = NULL;
 		free(s);
 	}
 }
@@ -27,7 +27,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 	uint32_t revents;
 	int n, num, curid, nextid;
 	struct timeval tv = { 0 };
-	struct selects * mdata = base->mdata;
+	struct selects * mdata = base->mata;
 	if (timeout > 0) {
 		tv.tv_sec = timeout / 1000;
 		tv.tv_usec = (timeout % 1000) * 1000;
@@ -72,7 +72,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 		// 监测小时事件并处理
 		if (revents) {
 			++num;
-			IOP_CB(base, iop, revents);
+			iop_callback(base, iop, revents);
 		}
 
 		curid = nextid;
@@ -82,7 +82,7 @@ static int _selects_dispatch(iopbase_t base, uint32_t timeout) {
 }
 
 static int _selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	struct selects * mdata = base->mdata;
+	struct selects * mdata = base->mata;
 	if (events & EV_READ)
 		FD_SET(s, &mdata->rset);
 	if (events & EV_WRITE)
@@ -99,7 +99,7 @@ static int _selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 
 // select 删除句柄
 static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
-	struct selects * mdata = base->mdata;
+	struct selects * mdata = base->mata;
 	FD_CLR(s, &mdata->rset);
 	FD_CLR(s, &mdata->wset);
 
@@ -125,7 +125,7 @@ static int _selects_del(iopbase_t base, uint32_t id, socket_t s) {
 
 // 事件修改, 其实只处理了读写事件
 static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	struct selects * mdata = base->mdata;
+	struct selects * mdata = base->mata;
 	if (events & EV_READ)
 		FD_SET(s, &mdata->rset);
 	else
@@ -140,19 +140,18 @@ static int _selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events
 }
 
 //
-// iop_poll_init - 通信的底层接口
-// base		: 总的iop对象管理器
-// maxsz	: 开启的最大处理数
-// return	: SBase 表示成功
+// iop_poll_init - 通信的底层初始化操作
+// base     : 总的 iop 对象基础管理器
+// return   : SBase 表示成功
 //
 int
-iop_poll_init(iopbase_t base, unsigned maxsz) {
+iop_poll_init(iopbase_t base) {
 	struct iopop * op =  &base->op;
 	struct selects * mdata = calloc(1, sizeof(struct selects));
 	if (NULL == mdata) {
 		RETURN(EAlloc, "malloc sizeof(struct selects) is error!");
 	}
-	base->mdata = mdata;
+	base->mata = mdata;
 
 	op->ffree = _selects_free;
 	op->fdispatch = _selects_dispatch;

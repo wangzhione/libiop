@@ -31,6 +31,10 @@ window 配置步骤
 
 	4. 链接器 -> 命令行 -> /ignore:4099 /LTCG
 
+	5. 连接器 -> 输入 -> 附加依赖项
+		ws2_32.lib
+		pthread_lib.lib
+
 linux 配置步骤
 	1. 参照 Makefile 文件
 	

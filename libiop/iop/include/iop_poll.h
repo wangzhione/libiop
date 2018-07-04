@@ -1,14 +1,13 @@
-﻿#ifndef _H_SIMPLEC_IOP_POLL
-#define _H_SIMPLEC_IOP_POLL
+﻿#ifndef _H_IOP_POLL_LIBIOP
+#define _H_IOP_POLL_LIBIOP
 
 #include <iop_def.h>
 
 //
-// iop_poll_init - 通信的底层接口
-// base		: 总的iop对象管理器
-// maxsz	: 开启的最大处理数
-// return	: SBase 表示成功
+// iop_poll_init - 通信的底层初始化操作
+// base     : 总的 iop 对象基础管理器
+// return   : SBase 表示成功
 //
-extern int iop_poll_init(iopbase_t base, unsigned maxsz);
+extern int iop_poll_init(iopbase_t base);
 
-#endif // !_H_SIMPLEC_IOP_POLL
+#endif //_H_IOP_POLL_LIBIOP

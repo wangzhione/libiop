@@ -18,7 +18,7 @@ struct iops {
 static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
 	int r, n;
 	iop_t iop = base->iops + id;
-    struct iops * sarg = iop->sarg;
+    struct iops * sarg = iop->srg;
 
 	// 销毁事件
 	if (events & EV_DELETE) {
@@ -40,7 +40,7 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 
 		for (;;) {
 			// 读取链接关闭
-			n = sarg->fparser(iop->rbuf->str, iop->rbuf->len);
+			n = sarg->fparser(iop->ruf->str, iop->ruf->len);
 			if (n < SBase) {
 				r = sarg->ferror(base, id, EV_CREATE, arg);
 				if (r < SBase)
@@ -50,13 +50,13 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 			if (n == SBase)
 				break;
 
-			r = sarg->fprocessor(base, id, iop->rbuf->str, n, arg);
+			r = sarg->fprocessor(base, id, iop->ruf->str, n, arg);
 			if (SBase <= r) {
-				if (n == iop->rbuf->len) {
-					iop->rbuf->len = 0;
+				if (n == iop->ruf->len) {
+					iop->ruf->len = 0;
 					break;
 				}
-				tstr_popup(iop->rbuf, n);
+				tstr_popup(iop->ruf, n);
 				continue;
 			}
 			return r;
@@ -66,10 +66,10 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 
 	// 写事件
 	if (events & EV_WRITE) {
-		if (iop->sbuf->len <= 0)
+		if (iop->suf->len <= 0)
 			return iop_mod(base, id, events);
 
-		n = socket_send(iop->s, iop->sbuf->str, iop->sbuf->len);
+		n = socket_send(iop->s, iop->suf->str, iop->suf->len);
 		if (n < SBase) {
             // EINTR : 进程还可以处理; EAGIN : 当前缓冲区已经写满可以继续写
 			if (errno != EINTR && errno != EAGAIN) {
@@ -81,10 +81,10 @@ static int _fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) 
 		}
 		if (n == SBase) return SBase;
 
-		if (n >= (int)iop->sbuf->len)
-			iop->sbuf->len = 0;
+		if (n >= (int)iop->suf->len)
+			iop->suf->len = 0;
 		else
-			tstr_popup(iop->sbuf, n);
+			tstr_popup(iop->suf, n);
 	}
 
 	// 超时时间处理
@@ -116,7 +116,7 @@ static int _fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops *
 		}
 
 		iop = base->iops + r;
-		iop->sarg = sarg;
+		iop->srg = sarg;
 		sarg->fconnect(base, r, iop->arg);
 	}
 

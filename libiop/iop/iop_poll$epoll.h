@@ -66,7 +66,7 @@ static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 			if (id < base->maxio) {
 				iop = base->iops + id;
 				what = _to_what(ev->events);
-				IOP_CB(base, iop, what);
+				iop_callback(base, iop, what);
 			}
 		}
 	}
@@ -102,16 +102,16 @@ static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 //
 // iop_poll_init - 通信的底层接口
 // base		: 总的iop对象管理器
-// maxsz	: 开启的最大处理数
 // return	: SBase 表示成功
 //
 int
-iop_poll_init(iopbase_t base, unsigned maxsz) {
+iop_poll_init(iopbase_t base) {
 	struct epolls * mdata;
+    unsigned maxsz = INT_POLL;
 	struct iopop * op = &base->op;
-	int epfd = epoll_create(_INT_POLL);
+	int epfd = epoll_create(INT_POLL);
 	if (epfd < SBase) {
-		RETURN(EBase, "epoll_create %d is error!", _INT_POLL);
+		RETURN(EBase, "epoll_create %d is error!", INT_POLL);
 	}
 
 	mdata = malloc(sizeof(struct epolls) + maxsz * sizeof(struct epoll_event));
