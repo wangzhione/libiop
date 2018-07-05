@@ -44,7 +44,7 @@ typedef int (* iop_parse_f)(const char * buf, uint32_t len);
 
 //
 // iop_f - 基础事件的回调函数
-// base     : iopbase 结构指针, iop基础对象集
+// base     : iopbase 结构指针, iop 基础对象集
 // id       : iop对象的id
 // arg      : 自带的参数
 // return   : -1 表示失败, 0 表示成功, 自己定义处理
@@ -96,8 +96,8 @@ struct iop {
 struct iopop {
     void (* ffree)(iopbase_t);                              // 资源释放接口
     int  (* fdispatch)(iopbase_t, uint32_t);                // 模型调度接口
-    int  (* fadd)(iopbase_t, uint32_t, socket_t, uint32_t); // 添加事件接口
     int  (* fdel)(iopbase_t, uint32_t, socket_t);           // 删除事件接口
+    int  (* fadd)(iopbase_t, uint32_t, socket_t, uint32_t); // 添加事件接口
     int  (* fmod)(iopbase_t, uint32_t, socket_t, uint32_t); // 修改事件接口
 };
 
