@@ -3,7 +3,7 @@
 #include <time.h>
 #include <iop_poll.h>
 
-struct selects {
+struct selecs {
     fd_set rset;
     fd_set wset;
     fd_set rsot;
@@ -13,21 +13,30 @@ struct selects {
 #endif
 };
 
-// selects_free - 开始销毁函数
-inline void selects_free(iopbase_t base) {
-    struct selects * s = base->mata;
+// selecs_maxfd - 得到 select maxfd
+inline int selecs_maxfd(struct selecs * mata) {
+#ifndef _MSC_VER
+    return mata->maxfd + 1
+#else
+    return 0;
+#endif
+}
+
+// selecs_free - 开始销毁函数
+inline void selecs_free(iopbase_t base) {
+    struct selecs * s = base->mata;
     if (s) {
         base->mata = NULL;
         free(s);
     }
 }
 
-int selects_dispatch(iopbase_t base, uint32_t timeout) {
+int selecs_dispatch(iopbase_t base, uint32_t timeout) {
     iop_t iop;
     uint16_t events;
     int n, num, curid, nextid;
-    struct selects * mata = base->mata;
-    struct timeval v = { 0 }, * p = &v;
+    struct timeval v, * p = &v;
+    struct selecs * mata = base->mata;
     if (timeout == (uint32_t)-1)
         p = NULL;
     else {
@@ -39,22 +48,8 @@ int selects_dispatch(iopbase_t base, uint32_t timeout) {
     memcpy(&mata->rsot, &mata->rset, sizeof(fd_set));
     memcpy(&mata->wsot, &mata->wset, sizeof(fd_set));
 
-    // 开始等待搞起了, window select 不需要最大 maxfd
-#ifdef _MSC_VER
-    // window select only listen socket 
-    n = select(0, &mata->rsot, &mata->wsot, NULL, p);
-    if (n < 0 && errno == EAGAIN) {
-        // 当定时器时候等待
-        n = 0;
-        Sleep(p->tv_sec * 1000 + p->tv_usec / 1000);
-    }
-#else
-    do {
-        // 时间tv会改变, 时间总的而言不变化
-        n = select(mata->maxfd + 1, &mata->rsot, &mata->wsot, NULL, p);
-    } while (n < SBase && errno == EINTR);
-#endif
-
+    // linux 时间 tv 会改变, winds 不会改变, 并且不需要 maxfd + 1
+    n = select(selecs_maxfd(mata), &mata->rsot, &mata->wsot, NULL, p);
     time(&base->curt);
     if (n <= 0) return n;
 
@@ -63,9 +58,9 @@ int selects_dispatch(iopbase_t base, uint32_t timeout) {
     while (curid != SOCKET_ERROR && num < n) {
         iop = base->iops + curid;
         nextid = iop->next;
-        events = 0;
 
         // 构建时间类型
+        events = 0;
         if (FD_ISSET(iop->s, &mata->rsot))
             events |= EV_READ;
         if (FD_ISSET(iop->s, &mata->wsot))
@@ -83,9 +78,9 @@ int selects_dispatch(iopbase_t base, uint32_t timeout) {
     return n;
 }
 
-// selects_del 删除句柄
-inline int selects_del(iopbase_t base, uint32_t id, socket_t s) {
-    struct selects * mata = base->mata;
+// selecs_del 删除句柄
+inline int selecs_del(iopbase_t base, uint32_t id, socket_t s) {
+    struct selecs * mata = base->mata;
     FD_CLR(s, &mata->rset);
     FD_CLR(s, &mata->wset);
 
@@ -107,8 +102,8 @@ inline int selects_del(iopbase_t base, uint32_t id, socket_t s) {
     return SBase;
 }
 
-inline int selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-    struct selects * mata = base->mata;
+inline int selecs_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+    struct selecs * mata = base->mata;
     if (events & EV_READ)
         FD_SET(s, &mata->rset);
     if (events & EV_WRITE)
@@ -121,9 +116,9 @@ inline int selects_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events)
     return SBase;
 }
 
-// selects_mod - 事件修改, 其实只处理了读写事件
-inline int selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-    struct selects * mata = base->mata;
+// selecs_mod - 事件修改, 其实只处理了读写事件
+inline int selecs_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+    struct selecs * mata = base->mata;
     if (events & EV_READ)
         FD_SET(s, &mata->rset);
     else
@@ -144,12 +139,12 @@ inline int selects_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events)
 //
 inline int
 iop_poll_init(iopbase_t base) {
-    base->mata = calloc(1, sizeof(struct selects));
-    base->op.ffree = selects_free;
-    base->op.fdispatch = selects_dispatch;
-    base->op.fadd = selects_add;
-    base->op.fdel = selects_del;
-    base->op.fmod = selects_mod;
+    base->mata = calloc(1, sizeof(struct selecs));
+    base->op.ffree = selecs_free;
+    base->op.fdispatch = selecs_dispatch;
+    base->op.fadd = selecs_add;
+    base->op.fdel = selecs_del;
+    base->op.fmod = selecs_mod;
     return SBase;
 }
 

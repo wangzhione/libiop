@@ -4,33 +4,34 @@
 #include <sys/epoll.h>
 
 struct epolls {
-	int efd;                    // epoll 文件描述符与
-	uint32_t ets;               // epoll 数组的个数
-	struct epoll_event evs[];   // 事件数组
+    int fd;                 // epoll 文件描述符与
+    uint32_t n;             // epoll 数组的个数
+    struct epoll_event e[]; // 事件数组
 };
 
 // 发送事件转换
-static inline uint32_t _to_events(uint32_t what) {
-	uint32_t events = 0;
-	if (what & EV_READ)
-		events |= EPOLLIN;
-	if (what & EV_WRITE)
-		events |= EPOLLOUT;
-	return events;
+inline uint32_t to_events(uint32_t what) {
+    uint32_t events = 0;
+    if (what & EV_READ)
+        events |= EPOLLIN;
+    if (what & EV_WRITE)
+        events |= EPOLLOUT;
+    return events;
 }
 
 // 事件宏转换
-static inline uint32_t _to_what(uint32_t events) {
-	uint32_t what = 0;
-	if (events & (EPOLLHUP | EPOLLERR))
-		what = EV_READ | EV_WRITE;
-	else {
-		if (events & EPOLLIN)
-			what |= EV_READ;
-		if (events & EPOLLOUT)
-			what |= EV_WRITE;
-	}
-	return what;
+inline uint32_t to_what(uint32_t events) {
+    uint32_t what;
+    if (events & (EPOLLHUP | EPOLLERR))
+        what = EV_READ | EV_WRITE;
+    else {
+        what = 0;
+        if (events & EPOLLIN)
+            what |= EV_READ;
+        if (events & EPOLLOUT)
+            what |= EV_WRITE;
+    }
+    return what;
 }
 
 // epoll 句柄释放
@@ -38,9 +39,9 @@ static void _epolls_free(iopbase_t base) {
 	struct epolls * mdata = base->mdata;
     if (mdata) {
         base->mdata = NULL;
-        if (mdata->efd >= 0)
-            close(mdata->efd);
-        mdata->efd = -1;
+        if (mdata->fd >= 0)
+            close(mdata->fd);
+        mdata->fd = -1;
         free(mdata);
     }
 }
@@ -53,19 +54,19 @@ static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
 	struct epolls * mdata = base->mdata;
 
 	do
-		n = epoll_wait(mdata->efd, mdata->evs, mdata->ets, timeout);
+		n = epoll_wait(mdata->fd, mdata->e, mdata->n, timeout);
 	while (n < SBase && errno == EINTR);
 
 	// 得到当前时间
 	time(&base->curt);
 	for (i = 0; i < n; ++i) {
-		struct epoll_event * ev = mdata->evs + i;
+		struct epoll_event * ev = mdata->e + i;
 		uint32_t id = ev->data.u32;
 		if (id >= 0 && id < base->maxio) {
 			iop = base->iops + id;
 			if (id < base->maxio) {
 				iop = base->iops + id;
-				what = _to_what(ev->events);
+				what = to_what(ev->events);
 				iop_callback(base, iop, what);
 			}
 		}
@@ -78,8 +79,8 @@ static inline int _epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 	struct epolls * mdata = base->mdata;
 	struct epoll_event ev;
 	ev.data.u32 = id;
-	ev.events = _to_events(events);
-	return epoll_ctl(mdata->efd, EPOLL_CTL_ADD, s, &ev);
+	ev.events = to_events(events);
+	return epoll_ctl(mdata->fd, EPOLL_CTL_ADD, s, &ev);
 }
 
 // epoll 删除监视操作
@@ -87,7 +88,7 @@ static inline int _epolls_del(iopbase_t base, uint32_t id, socket_t s) {
 	struct epolls * mdata = base->mdata;
 	struct epoll_event ev;
 	ev.data.u32 = id;
-	return epoll_ctl(mdata->efd, EPOLL_CTL_DEL, s, &ev);
+	return epoll_ctl(mdata->fd, EPOLL_CTL_DEL, s, &ev);
 }
 
 // epoll 修改句柄注册
@@ -95,8 +96,8 @@ static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t 
 	struct epolls * mdata = base->mdata;
 	struct epoll_event ev;
 	ev.data.u32 = id;
-	ev.events = _to_events(events);
-	return epoll_ctl(mdata->efd, EPOLL_CTL_MOD, s, &ev);
+	ev.events = to_events(events);
+	return epoll_ctl(mdata->fd, EPOLL_CTL_MOD, s, &ev);
 }
 
 //
@@ -118,8 +119,8 @@ iop_poll_init(iopbase_t base) {
 	if (NULL == mdata) {
 		RETURN(EAlloc, "malloc error epolls maxsz = %u.", maxsz);
 	}
-	mdata->efd = epfd;
-	mdata->ets = maxsz;
+	mdata->fd = epfd;
+	mdata->n = maxsz;
 	base->mdata = mdata;
 
 	op->ffree = _epolls_free;
