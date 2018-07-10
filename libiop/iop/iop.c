@@ -1,5 +1,4 @@
 ﻿#include <iop.h>
-#include <iop_poll.h>
 
 // 默认event 调度事件
 static inline int _iop_devent(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
@@ -151,7 +150,7 @@ static iop_t _iop_get(iopbase_t base) {
 // return	: 成功返回iop的id, 失败返回SOCKET_ERROR
 //
 uint32_t
-iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, void * arg) {
+iop_add(iopbase_t base, socket_t s, uint32_t n, uint32_t to, iop_event_f fev, void * arg) {
 	int r = 0;
 	iop_t iop = _iop_get(base);
 	if (NULL == iop) {
@@ -159,7 +158,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 	}
 
 	iop->s = s;
-	iop->events = ets;
+	iop->events = n;
 	iop->timeout = to;
 	iop->fevent = fev;
 	iop->last = base->curt;
@@ -171,7 +170,7 @@ iop_add(iopbase_t base, socket_t s, uint32_t ets, uint32_t to, iop_event_f fev, 
 		base->iohead = iop->id;
 		iop->type = IOP_IO;
 		socket_set_nonblock(s);
-		r = base->op.fadd(base, iop->id, s, ets);
+		r = base->op.fadd(base, iop->id, s, n);
 		if (r < SBase) {
 			iop_del(base, iop->id);
 			return SOCKET_ERROR;

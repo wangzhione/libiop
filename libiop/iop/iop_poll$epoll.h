@@ -4,9 +4,8 @@
 #include <sys/epoll.h>
 
 struct epolls {
-    int fd;                 // epoll 文件描述符与
-    uint32_t n;             // epoll 数组的个数
-    struct epoll_event e[]; // 事件数组
+    int fd;                 // epoll 文件描述符
+    struct epoll_event e[INT_POLL]; // 事件数组
 };
 
 // 发送事件转换
@@ -34,102 +33,92 @@ inline uint32_t to_what(uint32_t events) {
     return what;
 }
 
-// epoll 句柄释放
-static void _epolls_free(iopbase_t base) {
-	struct epolls * mdata = base->mdata;
-    if (mdata) {
-        base->mdata = NULL;
-        if (mdata->fd >= 0)
-            close(mdata->fd);
-        mdata->fd = -1;
-        free(mdata);
+// epolls_free - epoll 句柄释放
+inline void epolls_free(iopbase_t base) {
+    struct epolls * mata = base->mata;
+    if (mata) {
+        base->mata = NULL;
+        if (mata->fd >= 0)
+            close(mata->fd);
+        mata->fd = -1;
+        free(mata);
     }
 }
 
 // epoll 事件调度处理
-static int _epolls_dispatch(iopbase_t base, uint32_t timeout) {
-	int i, n = 0;
-	iop_t iop;
-    uint32_t what;
-	struct epolls * mdata = base->mdata;
+int epolls_dispatch(iopbase_t base, uint32_t timeout) {
+    int i, n = 0;
+    struct epolls * mata = base->mata;
+    do
+        n = epoll_wait(mata->fd, mata->e, sizeof(mata->e)/sizeof(*mata->e), timeout);
+    while (n < SBase && errno == EINTR);
 
-	do
-		n = epoll_wait(mdata->fd, mdata->e, mdata->n, timeout);
-	while (n < SBase && errno == EINTR);
-
-	// 得到当前时间
-	time(&base->curt);
-	for (i = 0; i < n; ++i) {
-		struct epoll_event * ev = mdata->e + i;
-		uint32_t id = ev->data.u32;
-		if (id >= 0 && id < base->maxio) {
-			iop = base->iops + id;
-			if (id < base->maxio) {
-				iop = base->iops + id;
-				what = to_what(ev->events);
-				iop_callback(base, iop, what);
-			}
-		}
-	}
-	return n;
+    // 得到当前时间
+    time(&base->curt);
+    for (i = 0; i < n; ++i) {
+        struct epoll_event * ev = mata->e + i;
+        uint32_t id = ev->data.u32;
+        if (id >= 0 && id < base->maxio) {
+            if (id < base->maxio) {
+                iop_t iop = base->iops + id;
+                int what = to_what(ev->events);
+                iop_callback(base, iop, what);
+            }
+        }
+    }
+    return n;
 }
 
 // epoll 添加处理事件
-static inline int _epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	struct epolls * mdata = base->mdata;
-	struct epoll_event ev;
-	ev.data.u32 = id;
-	ev.events = to_events(events);
-	return epoll_ctl(mdata->fd, EPOLL_CTL_ADD, s, &ev);
+inline int epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+    struct epoll_event ev;
+    struct epolls * mata = base->mata;
+    ev.data.u32 = id;
+    ev.events = to_events(events);
+    return epoll_ctl(mata->fd, EPOLL_CTL_ADD, s, &ev);
 }
 
 // epoll 删除监视操作
-static inline int _epolls_del(iopbase_t base, uint32_t id, socket_t s) {
-	struct epolls * mdata = base->mdata;
-	struct epoll_event ev;
-	ev.data.u32 = id;
-	return epoll_ctl(mdata->fd, EPOLL_CTL_DEL, s, &ev);
+static inline int epolls_del(iopbase_t base, uint32_t id, socket_t s) {
+    struct epoll_event ev;
+    struct epolls * mata = base->mata;
+    ev.data.u32 = id;
+    return epoll_ctl(mata->fd, EPOLL_CTL_DEL, s, &ev);
 }
 
 // epoll 修改句柄注册
-static inline int _epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-	struct epolls * mdata = base->mdata;
-	struct epoll_event ev;
-	ev.data.u32 = id;
-	ev.events = to_events(events);
-	return epoll_ctl(mdata->fd, EPOLL_CTL_MOD, s, &ev);
+inline int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+    struct epoll_event ev;
+    struct epolls * mata = base->mata;
+    ev.data.u32 = id;
+    ev.events = to_events(events);
+    return epoll_ctl(mata->fd, EPOLL_CTL_MOD, s, &ev);
 }
 
 //
-// iop_poll_init - 通信的底层接口
-// base		: 总的iop对象管理器
-// return	: SBase 表示成功
+// iop_poll_init - 通信的底层初始化操作
+// base     : 总的 iop 对象基础管理器
+// return   : SBase 表示成功
 //
 int
 iop_poll_init(iopbase_t base) {
-	struct epolls * mdata;
-    unsigned maxsz = INT_POLL;
-	struct iopop * op = &base->op;
-	int epfd = epoll_create(INT_POLL);
-	if (epfd < SBase) {
-		RETURN(EBase, "epoll_create %d is error!", INT_POLL);
-	}
+    struct epolls * mata;
+    int fd = epoll_create1(EPOLL_CLOEXEC);
+    if (fd < SBase) {
+        RETURN(EBase, "epoll_create1 is error");
+    }
 
-	mdata = malloc(sizeof(struct epolls) + maxsz * sizeof(struct epoll_event));
-	if (NULL == mdata) {
-		RETURN(EAlloc, "malloc error epolls maxsz = %u.", maxsz);
-	}
-	mdata->fd = epfd;
-	mdata->n = maxsz;
-	base->mdata = mdata;
+    mata = malloc(sizeof(struct epolls));
+    mata->fd = fd;
+    base->mata = mata;
 
-	op->ffree = _epolls_free;
-	op->fdispatch = _epolls_dispatch;
-	op->fadd = _epolls_add;
-	op->fdel = _epolls_del;
-	op->fmod = _epolls_mod;
+    base->op.ffree = epolls_free;
+    base->op.fdispatch = epolls_dispatch;
+    base->op.fadd = epolls_add;
+    base->op.fdel = epolls_del;
+    base->op.fmod = epolls_mod;
 
-	return SBase;
+    return SBase;
 }
 
 #endif//_EPOLL

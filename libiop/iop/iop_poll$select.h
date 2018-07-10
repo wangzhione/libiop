@@ -13,15 +13,6 @@ struct selecs {
 #endif
 };
 
-// selecs_maxfd - 得到 select maxfd
-inline int selecs_maxfd(struct selecs * mata) {
-#ifndef _MSC_VER
-    return mata->maxfd + 1
-#else
-    return 0;
-#endif
-}
-
 // selecs_free - 开始销毁函数
 inline void selecs_free(iopbase_t base) {
     struct selecs * s = base->mata;
@@ -47,9 +38,16 @@ int selecs_dispatch(iopbase_t base, uint32_t timeout) {
     // 开始复制变化
     memcpy(&mata->rsot, &mata->rset, sizeof(fd_set));
     memcpy(&mata->wsot, &mata->wset, sizeof(fd_set));
-
-    // linux 时间 tv 会改变, winds 不会改变, 并且不需要 maxfd + 1
-    n = select(selecs_maxfd(mata), &mata->rsot, &mata->wsot, NULL, p);
+#ifndef _MSC_VER
+    do {
+        // linux 时间 tv 会改变, winds 不会改变
+        // linux 需要 maxfd + 1, winds 不需要
+        n = select(mata->maxfd+1, &mata->rsot, &mata->wsot, NULL, p);
+    } while (n < SBase && errno == EINTR);
+#else
+    // window select only listen socket 
+    n = select(0, &mata->rsot, &mata->wsot, NULL, p);
+#endif
     time(&base->curt);
     if (n <= 0) return n;
 
@@ -65,7 +63,6 @@ int selecs_dispatch(iopbase_t base, uint32_t timeout) {
             events |= EV_READ;
         if (FD_ISSET(iop->s, &mata->wsot))
             events |= EV_WRITE;
-
         // 监测小时事件并处理
         if (events) {
             ++num;

@@ -94,14 +94,8 @@ inline void msleep(int ms) {
 #define EINTR                   WSAEINTR
 #undef  EAGAIN
 #define EAGAIN                  WSAEWOULDBLOCK
-#undef  EINVAL
-#define EINVAL                  WSAEINVAL
 #undef  EINPROGRESS
 #define EINPROGRESS             WSAEWOULDBLOCK
-#undef  EMFILE
-#define EMFILE                  WSAEMFILE
-#undef  ENFILE
-#define ENFILE                  WSAETOOMANYREFS
 
 /*
 * WinSock 2 extension -- manifest constants for shutdown()
