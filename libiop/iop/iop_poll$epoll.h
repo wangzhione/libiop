@@ -96,12 +96,12 @@ inline int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) 
 }
 
 //
-// iop_poll_init - 通信的底层初始化操作
+// iop_poll - 为 iop base 对象注入 poll 处理行为
 // base     : 总的 iop 对象基础管理器
 // return   : SBase 表示成功
 //
 int
-iop_poll_init(iopbase_t base) {
+iop_poll(iopbase_t base) {
     struct epolls * mata;
     int fd = epoll_create1(EPOLL_CLOEXEC);
     if (fd < SBase) {

@@ -50,7 +50,7 @@ inline iopbase_t
 iop_create(void) {
 	iopbase_t base = _iopbase_new(INT_POLL);
 	if (base) {
-		if (SBase > iop_poll_init(base)) {
+		if (SBase > iop_poll(base)) {
 			iop_delete(base);
 			RETURN(NULL, "iop_poll_init base error!");
 		}

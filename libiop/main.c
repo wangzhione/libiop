@@ -95,7 +95,7 @@ inline static int echo_error(iopbase_t base, uint32_t id, uint32_t err, void * a
 void 
 echo_server(void) {
     int r = -1;
-    iops_t base = iops_run(STR_HOST, INT_TIMEOUT,
+    iops_t base = iops_create(STR_HOST, INT_TIMEOUT,
         echo_parser, echo_processor, echo_connect, echo_destroy, echo_error);
 
     printf("create a new tcp server host %s\n", STR_HOST);
@@ -107,7 +107,7 @@ echo_server(void) {
         msleep(INT_SLEEP);
     }
 
-    iops_end(base);
+    iops_delete(base);
 }
 
 //
