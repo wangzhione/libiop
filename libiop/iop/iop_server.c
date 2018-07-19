@@ -14,7 +14,7 @@ struct iops {
     iop_event_f ferror;
 };
 
-int fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     int r, n;
     iop_t iop = base->iops + id;
     struct iops * srg = iop->srg;
@@ -95,15 +95,16 @@ int fdispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     return SBase;
 }
 
-int fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops * srg) {
+int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     if (events & EV_READ) {
+        struct iops * srg = arg;
         iop_t iop = base->iops + id;
         socket_t s = socket_accept(iop->s, NULL);
         if (INVALID_SOCKET == s) {
             RETURN(EFd, "socket_accept is error id = %u", id);
         }
 
-        int r = iop_add(base, s, EV_READ, srg->timeout, fdispatch, NULL);
+        int r = iop_add(base, s, EV_READ, srg->timeout, iops_dispatch, NULL);
         if (r < SBase) {
             socket_close(r);
             RETURN(r, "iop_add EV_READ timeout = %d, r = %u", srg->timeout, r);
@@ -116,7 +117,7 @@ int fconnect(iopbase_t base, uint32_t id, uint32_t events, struct iops * srg) {
     return SBase;
 }
 
-inline static void iops_run(struct iops * p) {
+void iops_run(struct iops * p) {
     while (p->run) {
         iop_dispatch(p->base);
     }
@@ -163,7 +164,7 @@ iops_create(const char * host,
     p->ferror = ferror;
 
     // 添加主 iop 对象, 永不超时
-    if (SOCKET_ERROR == iop_add(p->base, s, EV_READ, -1, (iop_event_f)fconnect, p)) {
+    if (SOCKET_ERROR == iop_add(p->base, s, EV_READ, -1, iops_listen, p)) {
         iop_delete(p->base);
         free(p); socket_close(s);
         RETNUL("iop_add is read SOCKET_ERROR error");
