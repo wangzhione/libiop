@@ -79,10 +79,8 @@ int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
         if (n == SBase)
             return SBase;
 
-        if (n >= (int)iop->suf->len)
-            iop->suf->len = 0;
-        else
-            tstr_popup(iop->suf, n);
+        // 截断已经发送内存
+        tstr_popup(iop->suf, n);
     }
 
     // 超时时间处理

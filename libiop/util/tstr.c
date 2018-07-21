@@ -1,7 +1,7 @@
 ﻿#include <tstr.h>
 
-// 字符串构建的初始化大小
-#define INT_TSTR  (1<<5)
+// INT_TSTR - 字符串构建的初始化大小
+#define INT_TSTR  (1<<7)
 
 //
 // tstr_expand - 为当前字符串扩容, 属于低级api
@@ -13,15 +13,14 @@ char *
 tstr_expand(tstr_t tsr, size_t len) {
     size_t cap = tsr->cap;
     if ((len += tsr->len) > cap) {
-        for (cap = cap < INT_TSTR ? INT_TSTR : cap; cap < len; cap <<= 1)
-            ;
-        // 需要重新分配内存
+        // 走 1.5 倍内存分配, '合理'降低内存占用
+        cap = cap < INT_TSTR ? INT_TSTR : cap;
+        while (cap < len) cap = cap * 3 / 2;
         tsr->str = realloc(tsr->str, cap);
         tsr->cap = cap;
     }
     return tsr->str + tsr->len;
 }
-
 //
 // tstr_delete - tstr_t 释放函数
 // tsr      : 待释放的串结构

@@ -36,7 +36,7 @@ extern int iop_dispatch(iopbase_t base);
 extern uint32_t iop_add(iopbase_t base, 
     socket_t s, uint32_t events, uint32_t to, iop_event_f fevent, void * arg);
 
-// 
+//
 // iop_del - iop 销毁事件
 // base     : io 调度对象
 // id       : iop 事件 id
