@@ -32,25 +32,19 @@ inline int echo_parser(const char * buf, uint32_t len) {
 
 // echo_processor - 数据处理
 inline static int echo_processor(iopbase_t base, uint32_t id, char * data, uint32_t len, void * arg) {
-    int ret = 0;
-    while (len > 0) {
-        char buf[BUFSIZ];
-        uint32_t n = len >= sizeof buf ? sizeof buf - 1 : len;
-        memcpy(buf, data + ret, n);
-        buf[n] = '\0';
+    char * buf = malloc(len + 1);
+    memcpy(buf, data, len);
+    buf[len] = '\0';
 
-        printf("recv data ret = %d, n = %u, data = %s\n", ret, n, buf);
+    printf("recv data = %s, len = %u\n", buf, len);
 
-        // 开始发送数据
-        int r = iop_send(base, id, buf, n);
-        if (r < 0) {
-            RETURN(r, "iop_send error id = %u, nen = %u, len = %d", id, n, len);
-        }
-
-        len -= n;
-        ret += r;
+    // 开始发送数据
+    int r = iop_send(base, id, buf, len);
+    free(buf);
+    if (r < SBase) {
+        RETURN(r, "iop_send error id = %u, len = %u, r = %d", id, len, r);
     }
-    return ret;
+    return SBase;
 }
 
 // 连接处理
@@ -64,22 +58,22 @@ inline void echo_destroy(iopbase_t base, uint32_t id, void * arg) {
 }
 
 // 错误处理
-inline int echo_error(iopbase_t base, uint32_t id, uint32_t err, void * arg) {
-    switch (err) {
+inline int echo_error(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+    switch (events) {
     case EV_READ:
-        CERR("EV_READ    base = %p, id = %u, err = %u, arg = %p", base, id, err, arg);
+        CERR("EV_READ    base = %p, id = %u, arg = %p", base, id, arg);
         break;
     case EV_WRITE:
-        CERR("EV_WRITE   base = %p, id = %u, err = %u, arg = %p", base, id, err, arg);
+        CERR("EV_WRITE   base = %p, id = %u, arg = %p", base, id, arg);
         break;
     case EV_CREATE:
-        CERR("EV_CREATE  base = %p, id = %u, err = %u, arg = %p", base, id, err, arg);
+        CERR("EV_CREATE  base = %p, id = %u, arg = %p", base, id, arg);
         break;
     case EV_TIMEOUT:
-        CERR("EV_TIMEOUT base = %p, id = %u, err = %u, arg = %p", base, id, err, arg);
+        CERR("EV_TIMEOUT base = %p, id = %u, arg = %p", base, id, arg);
         break;
     default:
-        CERR("EV_DEFAULT base = %p, id = %u, err = %u, arg = %p", base, id, err, arg);
+        CERR("EV_DEFAULT base = %p, id = %u, err = %u, arg = %p", base, id, events, arg);
     }
     return SBase;
 }
@@ -93,7 +87,6 @@ inline int echo_error(iopbase_t base, uint32_t id, uint32_t err, void * arg) {
 //
 void 
 echo_server(void) {
-    int r = -1;
     iops_t base = iops_create(STR_HOST, INT_TIMEOUT,
         echo_parser, echo_processor, echo_connect, echo_destroy, echo_error);
 
@@ -128,20 +121,21 @@ echo_client(void) {
 
     for (int i = 0; i < INT_CLIENT; ++i) {
         // 发送一个数据接收一个数据
-        printf("socket_sendn len = %zu, str = [%s]\n", sizeof str, str);
         int r = socket_sendn(s, str, sizeof str);
+        printf("socket_sendn sz = %zu, str = %s, r = %d\n", sizeof str, str, r);
         if (r == SOCKET_ERROR) {
-            socket_close(s);
-            EXIT("socket_sendn r = %d", r);
+            CERR("socket_sendn r = %d", r);
+            socket_close(s); exit(EXIT_FAILURE);
         }
         r = socket_recvn(s, str, sizeof str);
         if (r == SOCKET_ERROR) {
-            socket_close(s);
-            EXIT("socket_recvn r = %d.", r);
+            CERR("socket_recvn r = %d", r);
+            socket_close(s); exit(EXIT_FAILURE);
         }
-        printf("socket_recvn len = %zu, str = [%s]\n", sizeof str, str);
+        printf("socket_recvn sz = %zu, str = %s, r = %d\n", sizeof str, str, r);
     }
 
+    shutdown(s, SHUT_WR);
     socket_close(s);
     puts("echo_client test end...");
 }

@@ -18,7 +18,7 @@ iopbase_t iopbase_new(uint32_t maxio) {
     base->keepalive = base->curt;
     base->iohead = INVALID_SOCKET;
     base->freetail = maxio - 1;
-
+    base->fdel = iop_del;
     // 构建具体的处理
     while (i < maxio) {
         iop_t iop = base->iops + i;
@@ -283,10 +283,14 @@ iop_recv(iopbase_t base, uint32_t id) {
     // 开始接收数据
     n = socket_recv(iop->s, buf->str + buf->len, buf->cap - buf->len);
     if (n < 0) {
-        if (errno != EINTR && errno != EAGAIN) {
-            RETURN(EBase, "socket_recv error = %d", n);
-        }
-        return n;
+        // 信号打断, 或者重试继续读取操作
+        if (errno == EINTR || errno == EAGAIN)
+            return SBase;
+
+        CERR("socket_recv error = %d", n);
+        // 读取失败, 在 base 中清除 iop id 对象
+        iop_del(base, id);
+        return EBase;
     }
 
     // 返回最终结果

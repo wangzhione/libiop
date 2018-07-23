@@ -91,55 +91,6 @@ socket_addr(const char * ip, uint16_t port, sockaddr_t addr) {
 }
 
 //
-// socket_connecto      - connect 超时链接, 返回非阻塞 socket
-//
-int
-socket_connecto(socket_t s, const sockaddr_t addr, int ms) {
-    int n, r;
-    struct timeval to;
-    fd_set rset, wset, eset;
-
-    // 还是阻塞的connect
-    if (ms < 0) return socket_connect(s, addr);
-
-    // 非阻塞登录, 先设置非阻塞模式
-    r = socket_set_nonblock(s);
-    if (r < SBase) return r;
-
-    // 尝试连接, connect 返回 -1 并且 errno == EINPROGRESS 表示正在建立链接
-    r = socket_connect(s, addr);
-    // connect 链接中, linux 是 EINPROGRESS，winds 是 WSAEWOULDBLOCK
-    if (r >= SBase || errno != EINPROGRESS) 
-        return r;
-
-    // 超时 timeout, 直接返回结果 EBase = -1 错误
-    if (ms == 0) return EBase;
-
-    FD_ZERO(&rset); FD_SET(s, &rset);
-    FD_ZERO(&wset); FD_SET(s, &wset);
-    FD_ZERO(&eset); FD_SET(s, &eset);
-    to.tv_sec = ms / 1000;
-    to.tv_usec = (ms % 1000) * 1000;
-    n = select((int)s + 1, &rset, &wset, &eset, &to);
-    // 超时直接滚
-    if (n <= 0) return EBase;
-
-    // 当连接成功时候,描述符会变成可写
-    if (n == 1 && FD_ISSET(s, &wset))
-        return SBase;
-
-    // 当连接建立遇到错误时候, 描述符变为即可读又可写
-    if (FD_ISSET(s, &eset) || n == 2) {
-        socklen_t len = sizeof n;
-        // 只要最后没有 error那就 链接成功
-        if (!getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&n, &len) && !n)
-            return SBase;
-    }
-
-    return EBase;
-}
-
-//
 // socket_binds     - 端口绑定返回绑定好的 socket fd, 返回 INVALID_SOCKET or PF_INET PF_INET6
 // socket_listens   - 端口监听返回监听好的 socket fd.
 //
@@ -293,6 +244,64 @@ socket_connects(const char * host) {
 
     socket_close(s);
     RETURN(INVALID_SOCKET, "socket_connects %s", host);
+}
+
+//
+// socket_connecto      - connect 超时链接, 返回非阻塞 socket
+//
+int socket_connecto(socket_t s, const sockaddr_t addr, int ms) {
+    int n, r;
+    struct timeval to;
+    fd_set rset, wset, eset;
+
+    // 还是阻塞的connect
+    if (ms < 0) return socket_connect(s, addr);
+
+    // 非阻塞登录, 先设置非阻塞模式
+    r = socket_set_nonblock(s);
+    if (r < SBase) return r;
+
+    // 尝试连接, connect 返回 -1 并且 errno == EINPROGRESS 表示正在建立链接
+    r = socket_connect(s, addr);
+    // connect 链接中, linux 是 EINPROGRESS，winds 是 WSAEWOULDBLOCK
+    if (r >= SBase || errno != EINPROGRESS) {
+        socket_set_block(s);
+        return r;
+    }
+
+    // 超时 timeout, 直接返回结果 EBase = -1 错误
+    if (ms == 0) {
+        socket_set_block(s);
+        return EBase;
+    }
+
+    FD_ZERO(&rset); FD_SET(s, &rset);
+    FD_ZERO(&wset); FD_SET(s, &wset);
+    FD_ZERO(&eset); FD_SET(s, &eset);
+    to.tv_sec = ms / 1000;
+    to.tv_usec = (ms % 1000) * 1000;
+    n = select((int)s + 1, &rset, &wset, &eset, &to);
+    // 超时直接滚
+    if (n <= 0) {
+        socket_set_block(s);
+        return EBase;
+    }
+
+    // 当连接成功时候,描述符会变成可写
+    if (n == 1 && FD_ISSET(s, &wset)){
+        socket_set_block(s);
+        return SBase;
+    }
+
+    // 当连接建立遇到错误时候, 描述符变为即可读又可写
+    if (FD_ISSET(s, &eset) || n == 2) {
+        socklen_t len = sizeof n;
+        // 只要最后没有 error 那就 链接成功
+        if (!getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&n, &len) && !n)
+            r = SBase;
+    }
+    socket_set_block(s);
+    return r;
 }
 
 //
