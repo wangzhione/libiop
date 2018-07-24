@@ -1,34 +1,35 @@
 #
 # 前期编译的辅助参数支持
 #
-SRC_PATH		?= ./libiop
-IOP_DIR			?= iop
-TAR_PATH		?= ./Output
-OBJ_DIR			?= obj
-HLP_DIR			?= util
+ROOT		?= libiop
+
+DIOP		?= $(ROOT)/iop
+DUTL		?= $(ROOT)/util
+
+OUTS		?= Outs
+DOBJ		?= $(OUTS)/obj
 
 #
 # 指定一些目录, 还有编译参数支持
 #
-DIR			= -I$(SRC_PATH)/$(IOP_DIR)/include -I$(SRC_PATH)/$(HLP_DIR)/include
-DEF			= -D_HAVE_EPOLL
+INS			= -I$(DIOP)/include -I$(DUTL)/include
+DEF			= -D_EPOLL
 
 CC			= gcc
 LIB			= -lpthread -lm
-CFLAGS		= -g -O2 -Wall -Wno-unused-result -std=gnu11
+CFLAGS		= -g -O2 -Wall -Wno-unused-result
 
-RHAD		= $(CC) $(CFLAGS) $(DIR) $(DEF)
-RUNO		= $(RHAD) -c -o $(TAR_PATH)/$(OBJ_DIR)/$@ $<
-RUN			= $(RHAD) -o $(TAR_PATH)/$@ $(foreach v, $^, $(TAR_PATH)/$(OBJ_DIR)/$(v)) $(LIB)
+RHAD		= $(CC) $(CFLAGS) $(INS) $(DEF)
+RUNO		= $(RHAD) -c -o $(DOBJ)/$@ $<
+RUN			= $(RHAD) -o $(OUTS)/$@ $(foreach v, $^, $(DOBJ)/$(v)) $(LIB)
 
 #
 # CALL_RUNO - 命令序列集
-# $(notdir dir/*.c) 	-> *.c
-# $(basename *.c) 		-> *
+# $(notdir dir/*.c)		-> *.c
+# $(basename *.c)		-> *
 #
-
 define CALL_RUNO
-$(notdir $(basename $(1))).o : $(1) | $$(TAR_PATH)
+$(notdir $(basename $(1))).o : $(1) | $$(OUTS)
 	$$(RUNO)
 endef
 
@@ -40,12 +41,12 @@ endef
 all : main.exe
 
 #
-# *.o 映射到 $(TAR_PATH)/$(BUILD_DIR)/*.o
+# *.o 映射到 $(DOBJ)/*.o
 #
-main.exe : main.o tstr.o scsocket.o iop_poll.o iop.o iop_server.o strerr.o
+main.exe : main.o tstr.o strerr.o socket.o iop_poll.o iop.o iop_server.o
 	$(RUN)
 
-main.o : $(SRC_PATH)/main.c | $(TAR_PATH)
+main.o : $(ROOT)/main.c | $(OUTS)
 	$(RUNO)
 
 #
@@ -55,17 +56,18 @@ main.o : $(SRC_PATH)/main.c | $(TAR_PATH)
 # $(eval s)				-> s 当Makefile的一部分解析和执行
 # $(call s, t)			-> 执行命令集s 参数是 t
 #
-SRC_CS = $(wildcard\
-		 $(SRC_PATH)/$(IOP_DIR)/*.c\
-		 $(SRC_PATH)/$(HLP_DIR)/*.c\
-)
-$(foreach v, $(SRC_CS), $(eval $(call CALL_RUNO, $(v))))
+SRCC = $(wildcard $(DIOP)/*.c $(DUTL)/*.c)
+$(foreach v, $(SRCC), $(eval $(call CALL_RUNO, $(v))))
 
 #
 # 辅助操作, 构建目录, 清除操作
 #
-$(TAR_PATH) :
-	-mkdir -p $@/$(OBJ_DIR)
+$(OUTS) :
+	mkdir -p $(DOBJ)
 
 clean :
-	-rm -rf $(TAR_PATH)
+	-rm -rf *core*
+	-rm -rf $(OUTS)
+	-rm -rf logs $(ROOT)/logs
+	-rm -rf Debug Release x64
+	-rm -rf $(ROOT)/Debug $(ROOT)/Release $(ROOT)/x64
