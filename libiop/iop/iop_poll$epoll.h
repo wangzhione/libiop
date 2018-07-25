@@ -34,7 +34,7 @@ inline uint32_t to_what(uint32_t events) {
 }
 
 // epolls_free - epoll 句柄释放
-inline void epolls_free(iopbase_t base) {
+inline static void epolls_free(iopbase_t base) {
     struct epolls * mata = base->mata;
     if (mata) {
         base->mata = NULL;
@@ -70,7 +70,7 @@ int epolls_dispatch(iopbase_t base, uint32_t timeout) {
 }
 
 // epoll 添加处理事件
-inline int epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+inline static int epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
     struct epoll_event ev;
     struct epolls * mata = base->mata;
     ev.data.u32 = id;
@@ -79,7 +79,7 @@ inline int epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) 
 }
 
 // epoll 删除监视操作
-static inline int epolls_del(iopbase_t base, uint32_t id, socket_t s) {
+inline static int epolls_del(iopbase_t base, uint32_t id, socket_t s) {
     struct epoll_event ev;
     struct epolls * mata = base->mata;
     ev.data.u32 = id;
@@ -87,7 +87,7 @@ static inline int epolls_del(iopbase_t base, uint32_t id, socket_t s) {
 }
 
 // epoll 修改句柄注册
-inline int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+inline static int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
     struct epoll_event ev;
     struct epolls * mata = base->mata;
     ev.data.u32 = id;

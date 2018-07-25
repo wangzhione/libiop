@@ -26,7 +26,7 @@ int main(int argc, char * argv[]) {
 }
 
 // echo_parser - 数据检查
-inline int echo_parser(const char * buf, uint32_t len) {
+inline static int echo_parser(const char * buf, uint32_t len) {
     return (int)len;
 }
 
@@ -48,17 +48,17 @@ inline static int echo_processor(iopbase_t base, uint32_t id, char * data, uint3
 }
 
 // 连接处理
-inline void echo_connect(iopbase_t base, uint32_t id, void * arg) {
+inline static void echo_connect(iopbase_t base, uint32_t id, void * arg) {
     printf("echo_connect base = %p, id : %u, arg = %p\n", base, id, arg);
 }
 
 // 最终销毁处理
-inline void echo_destroy(iopbase_t base, uint32_t id, void * arg) {
+inline static void echo_destroy(iopbase_t base, uint32_t id, void * arg) {
     printf("echo_destroy base = %p, id : %u, arg = %p\n", base, id, arg);
 }
 
 // 错误处理
-inline int echo_error(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+inline static int echo_error(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     switch (events) {
     case EV_READ:
         CERR("EV_READ    base = %p, id = %u, arg = %p", base, id, arg);

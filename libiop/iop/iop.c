@@ -1,7 +1,7 @@
 ﻿#include <iop.h>
 
 // iop_event - 默认 event 调度事件
-inline int iop_event(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+inline static int iop_event(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     return SBase;
 }
 
