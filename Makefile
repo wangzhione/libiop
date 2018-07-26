@@ -13,15 +13,13 @@ DOBJ		?= $(OUTS)/obj
 # 指定一些目录, 还有编译参数支持
 #
 INS			= -I$(DIOP)/include -I$(DUTL)/include
-DEF			= -D_EPOLL
 
 CC			= gcc
 LIB			= -lpthread -lm
 CFLAGS		= -g -O2 -Wall -Wno-unused-result
 
-RHAD		= $(CC) $(CFLAGS) $(INS) $(DEF)
+RHAD		= $(CC) $(CFLAGS) $(INS)
 RUNO		= $(RHAD) -c -o $(DOBJ)/$@ $<
-RUN			= $(RHAD) -o $(OUTS)/$@ $(foreach v, $^, $(DOBJ)/$(v)) $(LIB)
 
 #
 # CALL_RUNO - 命令序列集
@@ -44,7 +42,7 @@ all : main.exe
 # *.o 映射到 $(DOBJ)/*.o
 #
 main.exe : main.o tstr.o strerr.o socket.o iop_poll.o iop.o iop_server.o
-	$(RUN)
+	$(CC) $(CFLAGS) -o $(OUTS)/$@ $(DOBJ)/*.o $(LIB)
 
 main.o : $(ROOT)/main.c | $(OUTS)
 	$(RUNO)

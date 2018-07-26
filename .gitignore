@@ -1,5 +1,6 @@
 # Ignore the uploaded folders
 logs/
+Outs/
 Output/
 
 # Ignore the project uploaded folders

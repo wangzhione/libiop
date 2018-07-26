@@ -1,4 +1,4 @@
-﻿#ifdef _EPOLL
+﻿#ifdef __GNUC__
 
 #include <iop_poll.h>
 #include <sys/epoll.h>
@@ -121,4 +121,4 @@ iop_poll(iopbase_t base) {
     return SBase;
 }
 
-#endif//_EPOLL
+#endif//__GNUC__

@@ -1,4 +1,4 @@
-﻿#ifndef _EPOLL
+﻿#ifndef _H_IOP_POLL_LIBIOP
 
 #include <time.h>
 #include <iop_poll.h>
@@ -14,7 +14,7 @@ struct selecs {
 };
 
 // selecs_free - 开始销毁函数
-inline void selecs_free(iopbase_t base) {
+inline static void selecs_free(iopbase_t base) {
     struct selecs * s = base->mata;
     if (s) {
         base->mata = NULL;
@@ -76,7 +76,7 @@ int selecs_dispatch(iopbase_t base, uint32_t timeout) {
 }
 
 // selecs_del 删除句柄
-inline int selecs_del(iopbase_t base, uint32_t id, socket_t s) {
+inline static int selecs_del(iopbase_t base, uint32_t id, socket_t s) {
     struct selecs * mata = base->mata;
     FD_CLR(s, &mata->rset);
     FD_CLR(s, &mata->wset);
@@ -99,7 +99,7 @@ inline int selecs_del(iopbase_t base, uint32_t id, socket_t s) {
     return SBase;
 }
 
-inline int selecs_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+inline static int selecs_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
     struct selecs * mata = base->mata;
     if (events & EV_READ)
         FD_SET(s, &mata->rset);
@@ -114,7 +114,7 @@ inline int selecs_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) 
 }
 
 // selecs_mod - 事件修改, 其实只处理了读写事件
-inline int selecs_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
+inline static int selecs_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
     struct selecs * mata = base->mata;
     if (events & EV_READ)
         FD_SET(s, &mata->rset);
@@ -145,4 +145,4 @@ iop_poll(iopbase_t base) {
     return SBase;
 }
 
-#endif//!_EPOLL
+#endif//_H_IOP_POLL_LIBIOP
