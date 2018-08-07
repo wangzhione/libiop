@@ -133,7 +133,7 @@ tstr_popup(tstr_t tsr, size_t len) {
 }
 
 // tstr_vprintf - BUFSIZ 以下内存处理
-inline static int tstr_vprintf(tstr_t tsr, const char * fmt, va_list arg) {
+inline int tstr_vprintf(tstr_t tsr, const char * fmt, va_list arg) {
     char buf[BUFSIZ];
     int len = vsnprintf(buf, sizeof buf, fmt, arg);
     if (len < sizeof buf) {

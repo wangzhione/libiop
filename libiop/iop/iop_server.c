@@ -14,7 +14,7 @@ struct iops {
     iop_event_f ferror;
 };
 
-int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+static int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     int r, n;
     iop_t iop = base->iops + id;
     struct iops * srg = iop->srg;
@@ -93,7 +93,7 @@ int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     return SBase;
 }
 
-int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+static int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     if (events & EV_READ) {
         struct iops * srg = arg;
         iop_t iop = base->iops + id;
@@ -115,7 +115,7 @@ int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     return SBase;
 }
 
-void iops_run(struct iops * p) {
+static void iops_run(struct iops * p) {
     while (p->run) {
         iop_dispatch(p->base);
     }

@@ -22,7 +22,7 @@ inline static void selecs_free(iopbase_t base) {
     }
 }
 
-int selecs_dispatch(iopbase_t base, uint32_t timeout) {
+static int selecs_dispatch(iopbase_t base, uint32_t timeout) {
     iop_t iop;
     uint16_t events;
     int n, num, curid, nextid;

@@ -46,7 +46,7 @@ inline static void epolls_free(iopbase_t base) {
 }
 
 // epoll 事件调度处理
-int epolls_dispatch(iopbase_t base, uint32_t timeout) {
+static int epolls_dispatch(iopbase_t base, uint32_t timeout) {
     int i, n = 0;
     struct epolls * mata = base->mata;
     do
@@ -100,7 +100,7 @@ inline static int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t e
 // base     : 总的 iop 对象基础管理器
 // return   : SBase 表示成功
 //
-int
+inline int
 iop_poll(iopbase_t base) {
     struct epolls * mata;
     int fd = epoll_create1(EPOLL_CLOEXEC);

@@ -148,7 +148,7 @@ socket_listens(const char * ip, uint16_t port, int backlog) {
 }
 
 // host_parse - 解析 host 内容
-int host_parse(const char * host, char ip[BUFSIZ], uint16_t * pprt) {
+static int host_parse(const char * host, char ip[BUFSIZ], uint16_t * pprt) {
     int port = 0;
     char * st = ip;
 

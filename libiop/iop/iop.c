@@ -6,7 +6,7 @@ inline static int iop_event(iopbase_t base, uint32_t id, uint32_t events, void *
 }
 
 // 构建对象
-iopbase_t iopbase_new(uint32_t maxio) {
+static iopbase_t iopbase_new(uint32_t maxio) {
     uint32_t i = 0, prev = INVALID_SOCKET;
     iopbase_t base = calloc(1, sizeof(struct iopbase));
     base->iops = calloc(maxio, sizeof(struct iop));
@@ -82,7 +82,8 @@ iop_delete(iopbase_t base) {
 // base     : io 调度对象
 // return   : 本次调度处理事件总数
 //
-int iop_dispatch(iopbase_t base) {
+int 
+iop_dispatch(iopbase_t base) {
     int r = base->op.fdispatch(base, base->dispatch);
     // 调度一次结果监测
     if (r < SBase)
@@ -264,7 +265,6 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 
     return iop_mod(base, id, iop->events | EV_WRITE);;
 }
-
 
 int
 iop_recv(iopbase_t base, uint32_t id) {
