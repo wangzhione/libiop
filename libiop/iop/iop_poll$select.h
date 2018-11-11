@@ -87,7 +87,7 @@ inline static int selecs_del(iopbase_t base, uint32_t id, socket_t s) {
         int curid = base->iohead;
         mata->maxfd = SOCKET_ERROR;
         while (curid != SOCKET_ERROR) {
-            iop_t iop = base->iops + curid;
+            iop_t iop = base->ios + curid;
             // 找出 base->ios 中最大 socket_t fd
             if (mata->maxfd < iop->s) 
                 mata->maxfd = iop->s;
