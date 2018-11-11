@@ -1,7 +1,8 @@
 ﻿#ifndef _H_IOP_SERVER_LIBIOP
 #define _H_IOP_SERVER_LIBIOP
 
-#include <iop.h>
+#include "iop.h"
+#include "thread.h"
 
 // ios iop server 服务对象
 typedef struct iops * iops_t;

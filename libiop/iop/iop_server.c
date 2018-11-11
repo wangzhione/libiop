@@ -1,5 +1,4 @@
-﻿#include <pthread.h>
-#include <iop_server.h>
+﻿#include "iop_server.h"
 
 struct iops {
     pthread_t tid;          // 奔跑线程
@@ -93,8 +92,8 @@ static int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * ar
     return SBase;
 }
 
-static int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
-    if (events & EV_READ) {
+static int iops_listen(iopbase_t base, uint32_t id, uint32_t event, void * arg) {
+    if (event & EV_READ) {
         struct iops * srg = arg;
         iop_t iop = base->ios + id;
         socket_t s = socket_accept(iop->s, NULL);
@@ -169,7 +168,7 @@ iops_create(const char * host,
     }
 
     // pthread create run func 
-    if (pthread_create(&p->tid, NULL, (start_f)iops_run, p)) {
+    if (pthread_run(p->tid, (start_f)iops_run, p)) {
         iop_delete(p->base);
         free(p); socket_close(s);
         RETNUL("pthread_create error r = %p", p);
@@ -187,7 +186,7 @@ inline void
 iops_delete(iops_t p) {
     if (p && p->run) {
         p->run = false;
-        pthread_join(p->tid, NULL);
+        pthread_end(p->tid);
         iop_delete(p->base);
         free(p);
     }

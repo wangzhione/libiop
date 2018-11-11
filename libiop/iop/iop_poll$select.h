@@ -1,7 +1,6 @@
 ﻿#ifndef _H_IOP_POLL_LIBIOP
 
-#include <time.h>
-#include <iop_poll.h>
+#include "iop_poll.h"
 
 struct selecs {
     fd_set rset;

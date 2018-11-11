@@ -22,6 +22,7 @@
     <ClInclude Include="pthread\include\semaphore.h" />
     <ClInclude Include="util\include\socket.h" />
     <ClInclude Include="util\include\struct.h" />
+    <ClInclude Include="util\include\thread.h" />
     <ClInclude Include="util\include\tstr.h" />
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,4 @@
-﻿#include <iop.h>
+﻿#include "iop.h"
 
 // iop_event - 默认 event 调度事件
 inline static int iop_event(iopbase_t base, uint32_t id, uint32_t event, void * arg) {
@@ -155,6 +155,8 @@ iop_add(iopbase_t base,
     if (s != INVALID_SOCKET) {
         iop->prev = INVALID_SOCKET;
         iop->next = base->iohead;
+        if (base->iohead != INVALID_SOCKET)
+            base->ios[base->iohead].prev = iop->id;
         base->iohead = iop->id;
         iop->type = IOP_IO;
         socket_set_nonblock(s);
@@ -186,7 +188,7 @@ iop_del(iopbase_t base, uint32_t id) {
             iop->s = INVALID_SOCKET;
         }
 
-        // INVALID_SOCKET 充当链表空结点
+        // INVALID_SOCKET 充当链表空节点, 头节点处理涉及 iohead
         if (iop->prev == INVALID_SOCKET) {
             base->iohead = iop->next;
             if (base->iohead != INVALID_SOCKET)
@@ -198,11 +200,13 @@ iop_del(iopbase_t base, uint32_t id) {
                 base->ios[node->next].prev = node->id;
         }
 
+        if (base->freehead == INVALID_SOCKET)
+            base->freehead = iop->id;
         iop->prev = base->freetail;
         iop->next = INVALID_SOCKET;
+        if (base->freetail != INVALID_SOCKET)
+            base->ios[base->freetail].next = iop->id;
         base->freetail = iop->id;
-        if (base->freehead == INVALID_SOCKET)
-            base->freehead = base->freetail;
         break;
     default:
         CERR("iop->type = %u is error", iop->type);

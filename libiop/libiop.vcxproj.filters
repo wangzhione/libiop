@@ -66,6 +66,9 @@
     <ClInclude Include="util\include\socket.h">
       <Filter>util\include</Filter>
     </ClInclude>
+    <ClInclude Include="util\include\thread.h">
+      <Filter>util\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
