@@ -24,7 +24,7 @@
 //
 #define INT_DISPATCH   (500)       // 事件调度的时间间隔 毫秒
 #define INT_KEEPALIVE  (60)        // 心跳包检查 秒
-#define INT_IOP        (12)        // 支持的 IO 链接最大数量
+#define INT_IOP        (1024)      // 支持的 IO 链接最大数量
 #define INT_SEND       (1 << 22)   // socket send buf 最大 4M
 #define INT_RECV       (1 << 16)   // 32k 接收缓冲区
 
@@ -116,7 +116,7 @@ struct iopbase {
     uint32_t iohead;         // 已用 iop 列表
     uint32_t freehead;       // 可用 iop 列表头
     uint32_t freetail;       // 可用 iop 列表尾
-    struct iop ios[INT_IOP]; // 所有 iop 对象
+    struct iop ios[];        // 所有 iop 对象
 };
 
 //
