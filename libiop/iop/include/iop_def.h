@@ -24,7 +24,7 @@
 //
 #define INT_DISPATCH   (500)       // 事件调度的时间间隔 毫秒
 #define INT_KEEPALIVE  (60)        // 心跳包检查 秒
-#define INT_IOP        (16)        // event limit
+#define INT_IOP        (1024)      // event limit
 #define INT_SEND       (1 << 22)   // socket send buf 最大 4M
 #define INT_RECV       (1 << 16)   // 32k 接收缓冲区
 
