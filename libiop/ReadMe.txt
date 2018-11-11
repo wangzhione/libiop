@@ -4,8 +4,8 @@
 
 学习步骤:
 	1. 参照 main.c 中 echo 服务器写法
-		1.1 libiop.exe -> 启动服务器
-		1.2 libiop.exe client -> 启动客户端
+		1.1 ./libiop.exe        -> 启动服务器
+		1.2 ./libiop.exe client -> 启动客户端
 		
 	2. 观看源码, 源码真的好简单
 
@@ -40,8 +40,8 @@ linux 配置步骤
 	
 	make clean
 	make
-	./Outs/main.exe
-	./Outs/main.exe client
+	./Out/main.exe
+	./Out/main.exe client
 
 	... run ->I
 	

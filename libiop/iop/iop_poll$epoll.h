@@ -4,12 +4,12 @@
 #include <sys/epoll.h>
 
 struct epolls {
-    int fd;                 // epoll 文件描述符
-    struct epoll_event e[INT_POLL]; // 事件数组
+    int fd;                   // epoll 文件描述符
+    struct epoll_event e[FD_SETSIZE]; // 事件数组
 };
 
-// 发送事件转换
-inline uint32_t to_events(uint32_t what) {
+// to_event - iop -> epoll 事件宏转换
+inline uint32_t to_event(uint32_t what) {
     uint32_t events = 0;
     if (what & EV_READ)
         events |= EPOLLIN;
@@ -18,16 +18,16 @@ inline uint32_t to_events(uint32_t what) {
     return events;
 }
 
-// 事件宏转换
-inline uint32_t to_what(uint32_t events) {
+// to_what - epoll -> iop 事件宏转换
+inline uint32_t to_what(uint32_t event) {
     uint32_t what;
-    if (events & (EPOLLHUP | EPOLLERR))
+    if (event & (EPOLLHUP | EPOLLERR))
         what = EV_READ | EV_WRITE;
     else {
         what = 0;
-        if (events & EPOLLIN)
+        if (event & EPOLLIN)
             what |= EV_READ;
-        if (events & EPOLLOUT)
+        if (event & EPOLLOUT)
             what |= EV_WRITE;
     }
     return what;
@@ -60,7 +60,7 @@ static int epolls_dispatch(iopbase_t base, uint32_t timeout) {
         uint32_t id = ev->data.u32;
         if (id >= 0 && id < base->maxio) {
             if (id < base->maxio) {
-                iop_t iop = base->iops + id;
+                iop_t iop = base->ios + id;
                 int what = to_what(ev->events);
                 iop_callback(base, iop, what);
             }
@@ -70,29 +70,26 @@ static int epolls_dispatch(iopbase_t base, uint32_t timeout) {
 }
 
 // epoll 添加处理事件
-inline static int epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-    struct epoll_event ev;
+inline static int epolls_add(iopbase_t base, uint32_t id, socket_t s, uint32_t event) {
     struct epolls * mata = base->mata;
-    ev.data.u32 = id;
-    ev.events = to_events(events);
-    return epoll_ctl(mata->fd, EPOLL_CTL_ADD, s, &ev);
+    struct epoll_event e = { .data = { .u32 = id} };
+    e.events = to_event(event);
+    return epoll_ctl(mata->fd, EPOLL_CTL_ADD, s, &e);
 }
 
 // epoll 删除监视操作
 inline static int epolls_del(iopbase_t base, uint32_t id, socket_t s) {
-    struct epoll_event ev;
     struct epolls * mata = base->mata;
-    ev.data.u32 = id;
-    return epoll_ctl(mata->fd, EPOLL_CTL_DEL, s, &ev);
+    struct epoll_event e = { .data = { .u32 = id} };
+    return epoll_ctl(mata->fd, EPOLL_CTL_DEL, s, &e);
 }
 
 // epoll 修改句柄注册
-inline static int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t events) {
-    struct epoll_event ev;
+inline static int epolls_mod(iopbase_t base, uint32_t id, socket_t s, uint32_t event) {
     struct epolls * mata = base->mata;
-    ev.data.u32 = id;
-    ev.events = to_events(events);
-    return epoll_ctl(mata->fd, EPOLL_CTL_MOD, s, &ev);
+    struct epoll_event e = { .data = { .u32 = id} };
+    e.events = to_event(event);
+    return epoll_ctl(mata->fd, EPOLL_CTL_MOD, s, &e);
 }
 
 //

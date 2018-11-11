@@ -1,4 +1,4 @@
-﻿#include <socket.h>
+﻿#include "socket.h"
 
 #ifdef _MSC_VER
 
@@ -98,10 +98,9 @@ socket_t
 socket_binds(const char * ip, uint16_t port, uint8_t protocol, int * family) {
     socket_t fd;
     char ports[sizeof "65535"];
-    struct addrinfo hint = { 0 };
-    struct addrinfo * addr = NULL;
+    struct addrinfo * addr = NULL, hint = { 0 };
     if (NULL == ip || *ip == '\0')
-        ip = "0.0.0.0"; // INADDR_ANY
+        ip = "0.0.0.0"; // default INADDR_ANY
 
     sprintf(ports, "%hu", port);
     hint.ai_family = AF_UNSPEC;
@@ -118,11 +117,11 @@ socket_binds(const char * ip, uint16_t port, uint8_t protocol, int * family) {
 
     fd = socket(addr->ai_family, addr->ai_socktype, 0);
     if (fd == INVALID_SOCKET)
-        goto _fail;
-    if (socket_set_reuseaddr(fd))
-        goto _faed;
+        goto err_free;
+    if (socket_set_reuse(fd))
+        goto err_close;
     if (bind(fd, addr->ai_addr, (int)addr->ai_addrlen))
-        goto _faed;
+        goto err_close;
 
     // Success return ip family
     if (family)
@@ -130,9 +129,9 @@ socket_binds(const char * ip, uint16_t port, uint8_t protocol, int * family) {
     freeaddrinfo(addr);
     return fd;
 
-_faed:
+err_close:
     socket_close(fd);
-_fail:
+err_free:
     freeaddrinfo(addr);
     return INVALID_SOCKET;
 }
@@ -151,7 +150,6 @@ socket_listens(const char * ip, uint16_t port, int backlog) {
 static int host_parse(const char * host, char ip[BUFSIZ], uint16_t * pprt) {
     int port = 0;
     char * st = ip;
-
     if (!host || !*host || *host == ':')
         strcpy(ip, "0.0.0.0");
     else {
@@ -174,6 +172,7 @@ static int host_parse(const char * host, char ip[BUFSIZ], uint16_t * pprt) {
                 RETURN(EParam, "host port err %s, %d", host, port);
         }
     }
+
     *pprt = port;
     return SBase;
 }
@@ -249,7 +248,7 @@ socket_connects(const char * host) {
 //
 // socket_connecto      - connect 超时链接, 返回非阻塞 socket
 //
-int socket_connecto(socket_t s, const sockaddr_t addr, int ms) {
+static int socket_connecto(socket_t s, const sockaddr_t addr, int ms) {
     int n, r;
     struct timeval to;
     fd_set rset, wset, eset;

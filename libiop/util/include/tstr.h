@@ -1,7 +1,7 @@
 ﻿#ifndef _H_TSTR
 #define _H_TSTR
 
-#include <struct.h>
+#include "struct.h"
 
 #ifndef TSTR_CREATE
 
@@ -42,7 +42,7 @@ extern void tstr_delete(tstr_t tsr);
 char * tstr_expand(tstr_t tsr, size_t len);
 
 //
-// tstr_t 创建函数, 会根据c的tstr串创建一个tstr_t结构的字符串
+// tstr_t 创建函数, 根据 C 的 str 串创建 tstr_t 字符串
 // str      : 待创建的字符串
 // len      : 创建串的长度
 // return   : 返回创建好的字符串,内存不足会打印日志退出程序
@@ -53,7 +53,7 @@ extern tstr_t tstr_creates(const char * str);
 //
 // 向 tstr_t 串结构中添加字符等, 内存分配失败内部会自己处理
 // c        : 单个添加的char
-// str      : 添加的c串
+// str      : 添加的 C 串
 // sz       : 添加串的长度
 //
 extern void tstr_appendc(tstr_t tsr, int c);
@@ -61,16 +61,16 @@ extern void tstr_appends(tstr_t tsr, const char * str);
 extern void tstr_appendn(tstr_t tsr, const char * str, size_t sz);
 
 //
-// tstr_cstr - 通过cstr_t串得到一个c的串以'\0'结尾
+// tstr_cstr - 通过 str_t 串得到一个 C 串以'\0'结尾
 // tsr      : tstr_t 串
-// return   : 返回构建好的c的串, 内存地址 tsr->str
+// return   : 返回构建 C 串, 内存地址 tsr->str
 //
 extern char * tstr_cstr(tstr_t tsr);
 
 //
-// tstr_dupstr - 得到 c 的串, 需要自行 free
+// tstr_dupstr - 得到 C 的串, 需要自行 free
 // tsr      : tstr_t 串
-// return   : 返回创建好的c串
+// return   : 返回创建好的 C 串
 //
 extern char * tstr_dupstr(tstr_t tsr);
 
@@ -87,7 +87,7 @@ extern void tstr_popup(tstr_t tsr, size_t len);
 // tsr      : tstr_t 串
 // fmt      : 待格式化的串
 // ...      : 等待进入的变量
-// return   : 返回创建好的c字符串内容
+// return   : 返回创建的 C 字符串内容
 //
 extern char * tstr_printf(tstr_t tsr, const char * fmt, ...);
 

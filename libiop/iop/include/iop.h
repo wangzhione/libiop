@@ -27,11 +27,11 @@ extern int iop_dispatch(iopbase_t base);
 // iop_add - 添加一个新的事件对象到 iopbase 调度对象集中
 // base     : io 调度对象
 // s        : socket 处理句柄
-// events   : 处理事件类型 EV_XXX
+// event   : 处理事件类型 EV_XXX
 // to       : 超时时间, '-1' 表示永不超时
 // fevent   : 事件回调函数
 // arg      : 用户参数
-// return   : 成功返回 iop 的 id, 失败返回 SOCKET_ERROR
+// return   : 成功返回 iop 的 id, 失败返回 EBase
 //
 extern uint32_t iop_add(iopbase_t base, 
     socket_t s, uint32_t events, uint32_t to, iop_event_f fevent, void * arg);
@@ -48,7 +48,7 @@ extern int iop_del(iopbase_t base, uint32_t id);
 // iop_mod - 修改iop事件订阅事件
 // base     : io事件集基础对象 
 // id       : iop事件id
-// events   : 新的 events 事件
+// event   : 新的 event 事件
 // return   : >= SBase 成功. 否则 表示失败
 //
 extern int iop_mod(iopbase_t base, uint32_t id, uint32_t events);

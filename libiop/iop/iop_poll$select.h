@@ -24,7 +24,7 @@ inline static void selecs_free(iopbase_t base) {
 
 static int selecs_dispatch(iopbase_t base, uint32_t timeout) {
     iop_t iop;
-    uint16_t events;
+    uint16_t event;
     int n, num, curid, nextid;
     struct timeval v, * p = &v;
     struct selecs * mata = base->mata;
@@ -54,19 +54,19 @@ static int selecs_dispatch(iopbase_t base, uint32_t timeout) {
     num = 0;
     curid = base->iohead;
     while (curid != SOCKET_ERROR && num < n) {
-        iop = base->iops + curid;
+        iop = base->ios + curid;
         nextid = iop->next;
 
         // 构建时间类型
-        events = 0;
+        event = 0;
         if (FD_ISSET(iop->s, &mata->rsot))
-            events |= EV_READ;
+            event |= EV_READ;
         if (FD_ISSET(iop->s, &mata->wsot))
-            events |= EV_WRITE;
+            event |= EV_WRITE;
         // 监测小时事件并处理
-        if (events) {
+        if (event) {
             ++num;
-            iop_callback(base, iop, events);
+            iop_callback(base, iop, event);
         }
 
         curid = nextid;
@@ -88,7 +88,7 @@ inline static int selecs_del(iopbase_t base, uint32_t id, socket_t s) {
         mata->maxfd = SOCKET_ERROR;
         while (curid != SOCKET_ERROR) {
             iop_t iop = base->iops + curid;
-            // 找出 base->iops 中最大 socket_t fd
+            // 找出 base->ios 中最大 socket_t fd
             if (mata->maxfd < iop->s) 
                 mata->maxfd = iop->s;
             curid = iop->next;

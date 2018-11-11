@@ -3,7 +3,7 @@
 
 #include <iop.h>
 
-// iops iop server 服务对象
+// ios iop server 服务对象
 typedef struct iops * iops_t;
 
 //
@@ -26,7 +26,7 @@ extern iops_t iops_create(const char * host,
                           iop_event_f ferror);
 
 //
-// iops_delete - 结束一个 iops 服务
+// iops_delete - 结束一个 ios 服务
 // p           : iops_create 返回的对象
 // return      : void
 //

@@ -6,8 +6,8 @@ ROOT		?= libiop
 DIOP		?= $(ROOT)/iop
 DUTL		?= $(ROOT)/util
 
-OUTS		?= Outs
-DOBJ		?= $(OUTS)/obj
+DOUT		?= Out
+DOBJ		?= $(DOUT)/obj
 
 #
 # 指定一些目录, 还有编译参数支持
@@ -27,7 +27,7 @@ RUNO		= $(RHAD) -c -o $(DOBJ)/$@ $<
 # $(basename *.c)		-> *
 #
 define CALL_RUNO
-$(notdir $(basename $(1))).o : $(1) | $$(OUTS)
+$(notdir $(basename $(1))).o : $(1) | $$(DOUT)
 	$$(RUNO)
 endef
 
@@ -42,9 +42,9 @@ all : main.exe
 # *.o 映射到 $(DOBJ)/*.o
 #
 main.exe : main.o tstr.o strerr.o socket.o iop_poll.o iop.o iop_server.o
-	$(CC) $(CFLAGS) -o $(OUTS)/$@ $(DOBJ)/*.o $(LIB)
+	$(CC) $(CFLAGS) -o $(DOUT)/$@ $(DOBJ)/*.o $(LIB)
 
-main.o : $(ROOT)/main.c | $(OUTS)
+main.o : $(ROOT)/main.c | $(DOUT)
 	$(RUNO)
 
 #
@@ -60,12 +60,12 @@ $(foreach v, $(SRCC), $(eval $(call CALL_RUNO, $(v))))
 #
 # 辅助操作, 构建目录, 清除操作
 #
-$(OUTS) :
+$(DOUT) :
 	mkdir -p $(DOBJ)
 
 clean :
 	-rm -rf *core*
-	-rm -rf $(OUTS)
+	-rm -rf $(DOUT)
 	-rm -rf logs $(ROOT)/logs
 	-rm -rf Debug Release x64
 	-rm -rf $(ROOT)/Debug $(ROOT)/Release $(ROOT)/x64

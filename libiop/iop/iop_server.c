@@ -5,7 +5,7 @@ struct iops {
     pthread_t tid;          // 奔跑线程
     iopbase_t base;         // iop 调度总对象
     uint32_t timeout;       // 超时时间
-    volatile bool run;      // true 表示 iops 运行
+    volatile bool run;      // true 表示 ios 运行
 
     iop_parse_f fparser;
     iop_processor_f fprocessor;
@@ -16,7 +16,7 @@ struct iops {
 
 static int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     int r, n;
-    iop_t iop = base->iops + id;
+    iop_t iop = base->ios + id;
     struct iops * srg = iop->srg;
 
     // 销毁事件
@@ -96,7 +96,7 @@ static int iops_dispatch(iopbase_t base, uint32_t id, uint32_t events, void * ar
 static int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     if (events & EV_READ) {
         struct iops * srg = arg;
-        iop_t iop = base->iops + id;
+        iop_t iop = base->ios + id;
         socket_t s = socket_accept(iop->s, NULL);
         if (INVALID_SOCKET == s) {
             RETURN(EFd, "socket_accept is error id = %u", id);
@@ -108,7 +108,7 @@ static int iops_listen(iopbase_t base, uint32_t id, uint32_t events, void * arg)
             RETURN(r, "iop_add EV_READ timeout = %d, r = %u", srg->timeout, r);
         }
 
-        iop = base->iops + r;
+        iop = base->ios + r;
         iop->srg = srg;
         srg->fconnect(base, r, iop->arg);
     }
@@ -179,7 +179,7 @@ iops_create(const char * host,
 }
 
 //
-// iops_delete - 结束一个 iops 服务
+// iops_delete - 结束一个 ios 服务
 // p           : iops_create 返回的对象
 // return      : void
 //

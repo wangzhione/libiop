@@ -133,7 +133,7 @@ extern const char * strerr(int err) {
     case ERROR_PATH_BUSY                                                          : return "The path specified cannot be used at this time";
     case ERROR_IS_SUBST_TARGET                                                    : return "An attempt was made to join or substitute a drive for which a directory on the drive is the target of a previous substitute";
     case ERROR_SYSTEM_TRACE                                                       : return "System trace information was not specified in your CONFIG.SYS file, or tracing is disallowed";
-    case ERROR_INVALID_EVENT_COUNT                                                : return "The number of specified semaphore events for DosMuxSemWait is not correct";
+    case ERROR_INVALID_EVENT_COUNT                                                : return "The number of specified semaphore event for DosMuxSemWait is not correct";
     case ERROR_TOO_MANY_MUXWAITERS                                                : return "DosMuxSemWait did not execute; too many semaphores are already set";
     case ERROR_INVALID_LIST_FORMAT                                                : return "The DosMuxSemWait list is not correct";
     case ERROR_LABEL_TOO_LONG                                                     : return "The volume label you entered exceeds the label character limit of the target file system";
@@ -2820,7 +2820,7 @@ extern const char * strerr(int err) {
     case ERROR_EVT_INVALID_EVENT_DATA                                             : return "The event data raised by the publisher is not compatible with the event template definition in the publisher's manifest";
     case ERROR_EVT_CHANNEL_NOT_FOUND                                              : return "The specified channel could not be found. Check channel configuration";
     case ERROR_EVT_MALFORMED_XML_TEXT                                             : return "The specified xml text was not well-formed. See Extended Error for more details";
-    case ERROR_EVT_SUBSCRIPTION_TO_DIRECT_CHANNEL                                 : return "The caller is trying to subscribe to a direct channel which is not allowed. The events for a direct channel go directly to a logfile and cannot be subscribed to";
+    case ERROR_EVT_SUBSCRIPTION_TO_DIRECT_CHANNEL                                 : return "The caller is trying to subscribe to a direct channel which is not allowed. The event for a direct channel go directly to a logfile and cannot be subscribed to";
     case ERROR_EVT_CONFIGURATION_ERROR                                            : return "Configuration error";
     case ERROR_EVT_QUERY_RESULT_STALE                                             : return "The query result is stale / invalid. This may be due to the log being cleared or rolling over after the query result was created. Users should handle this code by releasing the query result object and reissuing the query";
     case ERROR_EVT_QUERY_RESULT_INVALID_POSITION                                  : return "Query result is currently at an invalid position";
@@ -2851,8 +2851,8 @@ extern const char * strerr(int err) {
     case ERROR_EVT_PUBLISHER_DISABLED                                             : return "The publisher has been disabled and its resource is not available. This usually occurs when the publisher is in the process of being uninstalled or upgraded";
     case ERROR_EVT_FILTER_OUT_OF_RANGE                                            : return "Attempted to create a numeric type that is outside of its valid range";
     case ERROR_EC_SUBSCRIPTION_CANNOT_ACTIVATE                                    : return "The subscription fails to activate";
-    case ERROR_EC_LOG_DISABLED                                                    : return "The log of the subscription is in disabled state, and can not be used to forward events to. The log must first be enabled before the subscription can be activated";
-    case ERROR_EC_CIRCULAR_FORWARDING                                             : return "When forwarding events from local machine to itself, the query of the subscription can't contain target log of the subscription";
+    case ERROR_EC_LOG_DISABLED                                                    : return "The log of the subscription is in disabled state, and can not be used to forward event to. The log must first be enabled before the subscription can be activated";
+    case ERROR_EC_CIRCULAR_FORWARDING                                             : return "When forwarding event from local machine to itself, the query of the subscription can't contain target log of the subscription";
     case ERROR_EC_CREDSTORE_FULL                                                  : return "The credential store that is used to save credentials is full";
     case ERROR_EC_CRED_NOT_FOUND                                                  : return "The credential used by this subscription can't be found in credential store";
     case ERROR_EC_NO_ACTIVE_CHANNEL                                               : return "No active channel is found for the query";
@@ -3201,7 +3201,7 @@ extern const char * strerr(int err) {
     case EVENT_E_INTERNALERROR                                                    : return "An unexpected internal error was detected";
     case EVENT_E_INVALID_PER_USER_SID                                             : return "The owner SID on a per-user subscription doesn't exist";
     case EVENT_E_USER_EXCEPTION                                                   : return "A user-supplied component or subscriber raised an exception";
-    case EVENT_E_TOO_MANY_METHODS                                                 : return "An interface has too many methods to fire events from";
+    case EVENT_E_TOO_MANY_METHODS                                                 : return "An interface has too many methods to fire event from";
     case EVENT_E_MISSING_EVENTCLASS                                               : return "A subscription cannot be stored unless its event class already exists";
     case EVENT_E_NOT_ALL_REMOVED                                                  : return "Not all the objects requested could be removed";
     case EVENT_E_COMPLUS_NOT_INSTALLED                                            : return "COM+ is required for this operation, but is not installed";
@@ -3547,7 +3547,7 @@ extern const char * strerr(int err) {
     case RPC_E_CANTCALLOUT_AGAIN                                                  : return "There is no second outgoing call on same channel in DDE conversation";
     case RPC_E_SERVER_DIED_DNE                                                    : return "The callee (server [not server application]) is not available and disappeared; all connections are invalid. The call did not execute";
     case RPC_E_SYS_CALL_FAILED                                                    : return "System call failed";
-    case RPC_E_OUT_OF_RESOURCES                                                   : return "Could not allocate some required resource (memory, events, ...)";
+    case RPC_E_OUT_OF_RESOURCES                                                   : return "Could not allocate some required resource (memory, event, ...)";
     case RPC_E_ATTEMPTED_MULTITHREAD                                              : return "Attempted to make calls on more than one thread in single threaded mode";
     case RPC_E_NOT_REGISTERED                                                     : return "The requested interface is not registered on the server object";
     case RPC_E_FAULT                                                              : return "RPC could not call the server or could not return the results of calling the server";
@@ -5028,7 +5028,7 @@ extern const char * strerr(int err) {
     case FWP_E_SESSION_ABORTED                                                    : return "The session has been cancelled";
     case FWP_E_INCOMPATIBLE_TXN                                                   : return "The call is not allowed from within a read-only transaction";
     case FWP_E_TIMEOUT                                                            : return "The call timed out while waiting to acquire the transaction lock";
-    case FWP_E_NET_EVENTS_DISABLED                                                : return "Collection of network diagnostic events is disabled";
+    case FWP_E_NET_EVENTS_DISABLED                                                : return "Collection of network diagnostic event is disabled";
     case FWP_E_INCOMPATIBLE_LAYER                                                 : return "The operation is not supported by the specified layer";
     case FWP_E_KM_CLIENTS_ONLY                                                    : return "The call is allowed for kernel-mode callers only";
     case FWP_E_LIFETIME_MISMATCH                                                  : return "The call tried to associate two objects with incompatible lifetimes";

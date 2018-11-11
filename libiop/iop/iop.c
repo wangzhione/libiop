@@ -1,15 +1,16 @@
 ﻿#include <iop.h>
 
 // iop_event - 默认 event 调度事件
-inline static int iop_event(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+inline static int iop_event(iopbase_t base, uint32_t id, uint32_t event, void * arg) {
     return SBase;
 }
 
 // 构建对象
 static iopbase_t iopbase_new(uint32_t maxio) {
+    iop_t iop;
     uint32_t i = 0, prev = INVALID_SOCKET;
-    iopbase_t base = calloc(1, sizeof(struct iopbase));
-    base->iops = calloc(maxio, sizeof(struct iop));
+    iopbase_t base = calloc(1, 
+                            sizeof(struct iopbase) + maxio * sizeof(struct iop));
 
     // 开始部署数据
     base->maxio = maxio;
@@ -21,7 +22,7 @@ static iopbase_t iopbase_new(uint32_t maxio) {
     base->fdel = iop_del;
     // 构建具体的处理
     while (i < maxio) {
-        iop_t iop = base->iops + i;
+        iop = base->ios + i;
         iop->id = i;
         iop->s = INVALID_SOCKET;
         iop->fevent = iop_event;
@@ -30,6 +31,8 @@ static iopbase_t iopbase_new(uint32_t maxio) {
         prev = i;
         iop->next = ++i;
     }
+    // 链表最后结点指向 INVALID_SOCKET
+    iop->next = INVALID_SOCKET;
 
     return base;
 }
@@ -40,7 +43,7 @@ static iopbase_t iopbase_new(uint32_t maxio) {
 //
 inline iopbase_t 
 iop_create(void) {
-    iopbase_t base = iopbase_new(INT_POLL);
+    iopbase_t base = iopbase_new(INT_IOP);
     if (SBase > iop_poll(base)) {
         iop_delete(base);
         RETNUL("iop_poll_init base error!");
@@ -56,19 +59,17 @@ iop_create(void) {
 void 
 iop_delete(iopbase_t base) {
     if (!base) return;
-    if (base->iops) {
+    if (base->ios) {
         while (base->iohead != INVALID_SOCKET)
             iop_del(base, base->iohead);
 
         for (uint32_t i = 0; i < base->maxio; ++i) {
-            iop_t iop = base->iops + i;
+            iop_t iop = base->ios + i;
             TSTR_DELETE(iop->suf);
             TSTR_DELETE(iop->ruf);
         }
 
         base->maxio = 0;
-        free(base->iops);
-        base->iops = NULL;
     }
 
     if (base->op.ffree)
@@ -96,7 +97,7 @@ iop_dispatch(iopbase_t base) {
             int curid = base->iohead;
             base->keepalive = base->curt;
             while (curid != INVALID_SOCKET) {
-                iop_t iop = base->iops + curid;
+                iop_t iop = base->ios + curid;
                 int nextid = iop->next;
                 if (iop->timeout > 0 && iop->last + iop->timeout < base->curt)
                     iop_callback(base, iop, EV_TIMEOUT);
@@ -115,12 +116,12 @@ inline iop_t iop_get(iopbase_t base) {
     iop_t iop = NULL;
     if (base->freehead != INVALID_SOCKET) {
         // 存在释放结点, 找出来处理
-        iop = base->iops + base->freehead;
+        iop = base->ios + base->freehead;
         base->freehead = iop->next;
         if (base->freehead == INVALID_SOCKET)
             base->freetail = INVALID_SOCKET;
         else
-            base->iops[base->freehead].prev = INVALID_SOCKET;
+            base->ios[base->freehead].prev = INVALID_SOCKET;
     }
     return iop;
 }
@@ -129,15 +130,15 @@ inline iop_t iop_get(iopbase_t base) {
 // iop_add - 添加一个新的事件对象到 iopbase 调度对象集中
 // base     : io 调度对象
 // s        : socket 处理句柄
-// events   : 处理事件类型 EV_XXX
+// event   : 处理事件类型 EV_XXX
 // to       : 超时时间, '-1' 表示永不超时
 // fevent   : 事件回调函数
 // arg      : 用户参数
-// return   : 成功返回 iop 的 id, 失败返回 SOCKET_ERROR
+// return   : 成功返回 iop 的 id, 失败返回 EBase
 //
 uint32_t 
 iop_add(iopbase_t base,
-    socket_t s, uint32_t events, uint32_t to, iop_event_f fevent, void * arg) {
+    socket_t s, uint32_t event, uint32_t to, iop_event_f fevent, void * arg) {
     int r;
     iop_t iop = iop_get(base);
     if (NULL == iop) {
@@ -145,7 +146,7 @@ iop_add(iopbase_t base,
     }
 
     iop->s = s;
-    iop->events = events;
+    iop->event = event;
     iop->timeout = to;
     iop->fevent = fevent;
     iop->last = base->curt;
@@ -157,10 +158,10 @@ iop_add(iopbase_t base,
         base->iohead = iop->id;
         iop->type = IOP_IO;
         socket_set_nonblock(s);
-        r = base->op.fadd(base, iop->id, s, events);
+        r = base->op.fadd(base, iop->id, s, event);
         if (r < SBase) {
             iop_del(base, iop->id);
-            return SOCKET_ERROR;
+            return EBase;
         }
     }
 
@@ -175,7 +176,7 @@ iop_add(iopbase_t base,
 //
 int 
 iop_del(iopbase_t base, uint32_t id) {
-    iop_t iop = base->iops + id;
+    iop_t iop = base->ios + id;
     switch (iop->type) {
     case IOP_IO:
         iop->fevent(base, id, EV_DELETE, iop->arg);
@@ -189,19 +190,19 @@ iop_del(iopbase_t base, uint32_t id) {
         if (iop->prev == INVALID_SOCKET) {
             base->iohead = iop->next;
             if (base->iohead != INVALID_SOCKET)
-                base->iops[base->iohead].prev = INVALID_SOCKET;
+                base->ios[base->iohead].prev = INVALID_SOCKET;
         } else {
-            iop_t node = base->iops + iop->prev;
+            iop_t node = base->ios + iop->prev;
             node->next = iop->next;
             if (node->next != INVALID_SOCKET)
-                base->iops[node->next].prev = node->id;
+                base->ios[node->next].prev = node->id;
         }
 
         iop->prev = base->freetail;
         iop->next = INVALID_SOCKET;
         base->freetail = iop->id;
-        if (base->freetail == INVALID_SOCKET)
-            base->freehead = INVALID_SOCKET;
+        if (base->freehead == INVALID_SOCKET)
+            base->freehead = base->freetail;
         break;
     default:
         CERR("iop->type = %u is error", iop->type);
@@ -215,12 +216,12 @@ iop_del(iopbase_t base, uint32_t id) {
 // iop_mod - 修改iop事件订阅事件
 // base     : io事件集基础对象 
 // id       : iop事件id
-// events   : 新的 events 事件
+// event   : 新的 event 事件
 // return   : >= SBase 成功. 否则 表示失败
 //
 int 
 iop_mod(iopbase_t base, uint32_t id, uint32_t events) {
-    iop_t iop = base->iops + id;
+    iop_t iop = base->ios + id;
     if (iop->type != IOP_IO) {
         RETURN(EBase, "iop error type = %u, %u", iop->type, id);
     }
@@ -234,7 +235,7 @@ iop_mod(iopbase_t base, uint32_t id, uint32_t events) {
 // iop_xxxx 轮询事件的发送接收操作, 发送没变化, 接收放在接收缓冲区
 int
 iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
-    iop_t iop = base->iops + id;
+    iop_t iop = base->ios + id;
     const char * str = data;
     tstr_t buf = iop->suf;
     int n = 0;
@@ -260,15 +261,15 @@ iop_send(iopbase_t base, uint32_t id, const void * data, uint32_t len) {
 
     // 开始填充内存
     tstr_appendn(buf, str, len - n);
-    if (iop->events & EV_WRITE)
+    if (iop->event & EV_WRITE)
         return SBase;
 
-    return iop_mod(base, id, iop->events | EV_WRITE);;
+    return iop_mod(base, id, iop->event | EV_WRITE);;
 }
 
 int
 iop_recv(iopbase_t base, uint32_t id) {
-    iop_t iop = base->iops + id;
+    iop_t iop = base->ios + id;
     tstr_t buf = iop->ruf;
     int n;
 

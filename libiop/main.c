@@ -16,7 +16,8 @@ int main(int argc, char * argv[]) {
 
     // 客户端和服务器雌雄同体
     if (argc > 1 && !strcmp("client", argv[1])) {
-        echo_client();
+        for (int i = 0; i < INT_IOP * 2; ++i)
+            echo_client();
     } else {
         // 测试基础的服务器启动
         echo_server();
@@ -31,7 +32,7 @@ inline static int echo_parser(const char * buf, uint32_t len) {
 }
 
 // echo_processor - 数据处理
-inline static int echo_processor(iopbase_t base, uint32_t id, char * data, uint32_t len, void * arg) {
+static int echo_processor(iopbase_t base, uint32_t id, char * data, uint32_t len, void * arg) {
     char * buf = malloc(len + 1);
     memcpy(buf, data, len);
     buf[len] = '\0';
@@ -58,7 +59,7 @@ inline static void echo_destroy(iopbase_t base, uint32_t id, void * arg) {
 }
 
 // 错误处理
-inline static int echo_error(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
+static int echo_error(iopbase_t base, uint32_t id, uint32_t events, void * arg) {
     switch (events) {
     case EV_READ:
         CERR("EV_READ    base = %p, id = %u, arg = %p", base, id, arg);

@@ -3,10 +3,9 @@
 
 #include <time.h>
 #include <fcntl.h>
+#include "struct.h"
 #include <signal.h>
 #include <sys/types.h>
-
-#include <struct.h>
 
 #ifdef __GNUC__
 
@@ -53,15 +52,11 @@ inline int socket_close(socket_t s) {
 // socket_set_nonblock  - 设置套接字是非阻塞
 inline static int socket_set_block(socket_t s) {
     int mode = fcntl(s, F_GETFL, 0);
-    if (mode == SOCKET_ERROR)
-        return SOCKET_ERROR;
     return fcntl(s, F_SETFL, mode & ~O_NONBLOCK);
 }
 
-inline static int socket_set_nonblock(socket_t s) {
+inline int socket_set_nonblock(socket_t s) {
     int mode = fcntl(s, F_GETFL, 0);
-    if (mode == SOCKET_ERROR)
-        return SOCKET_ERROR;
     return fcntl(s, F_SETFL, mode | O_NONBLOCK);
 }
 
@@ -98,11 +93,13 @@ inline void msleep(int ms) {
 #define EINPROGRESS             WSAEWOULDBLOCK
 
 /*
-* WinSock 2 extension -- manifest constants for shutdown()
-*/
+ * WinSock 2 extension -- manifest constants for shutdown()
+ */
 #define SHUT_RD                 SD_RECEIVE
 #define SHUT_WR                 SD_SEND
 #define SHUT_RDWR               SD_BOTH
+
+#define SO_REUSEPORT            SO_REUSEADDR
 
 typedef SOCKET socket_t;
 typedef int socklen_t;
@@ -172,22 +169,15 @@ inline socket_t socket_stream(void) {
     return socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
 
-// socket_set_reuseaddr - 开启地址复用
+// socket_set_reuse - 开启端口和地址复用
 // socket_set_keepalive - 开启心跳包检测, 默认2h 5次
 inline int socket_set_enable(socket_t s, int optname) {
     int ov = 1;
     return setsockopt(s, SOL_SOCKET, optname, (void *)&ov, sizeof ov);
 }
 
-inline int socket_set_reuseaddr(socket_t s) {
-    int r = socket_set_enable(s, SO_REUSEADDR);
-#ifdef SO_REUSEPORT
-    if (!r) {
-        // Linux set SO_REUSEPORT
-        r = socket_set_enable(s, SO_REUSEPORT);
-    }
-#endif
-    return r;
+inline int socket_set_reuse(socket_t s) {
+    return socket_set_enable(s, SO_REUSEPORT);
 }
 
 inline int socket_set_keepalive(socket_t s) {
